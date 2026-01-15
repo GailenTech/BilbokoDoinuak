@@ -45,12 +45,21 @@ Proyecto de migración desde Base44 (plataforma no-code) a código propio para m
 - [x] Página de Juegos (placeholder)
 - [x] Página de Admin (acceso restringido)
 
+### Verificación completada
+- [x] Build de producción exitoso (416 KB JS, 35 KB CSS)
+- [x] Dev server funcionando en localhost:5173
+- [x] Home page con selector de idioma: OK
+- [x] Mapa con 15 marcadores: OK
+- [x] Panel de detalle con imagen, audio, YouTube: OK
+- [x] Página de rutas temáticas: OK
+- [x] Filtros por ruta funcionando: OK
+
 ### Próximos pasos
-- [ ] Probar que todo compila y funciona
 - [ ] Implementar juego Quiz básico
 - [ ] Implementar juego Memory básico
 - [ ] Añadir filtros de emociones en el mapa
 - [ ] Considerar persistencia ligera (localStorage para progreso)
+- [ ] Descargar assets localmente (imágenes, audios) para independencia total
 
 ### Notas sobre migración de Base44
 - La integración GitHub de Base44 es **parcialmente bidireccional**
