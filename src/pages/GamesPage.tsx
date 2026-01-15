@@ -1,16 +1,17 @@
 import { useLanguage } from '../context/LanguageContext';
-import { Brain, Music2, Target, Trophy, Users, Star } from 'lucide-react';
+import { Play, Trophy, Target, LayoutGrid, User, Swords, Award, Coins } from 'lucide-react';
 
-const games = [
+const mainGames = [
   {
     id: 'quiz',
     name_es: 'Quiz Sonoro',
     name_eu: 'Soinu Quiz',
     description_es: 'Adivina los sonidos y gana XP',
     description_eu: 'Asmatu soinuak eta irabazi XP',
-    icon: Brain,
-    color: '#8b5cf6',
-    available: true,
+    icon: Play,
+    iconBg: 'bg-green-100',
+    iconColor: 'text-green-500',
+    borderColor: 'border-l-green-500',
   },
   {
     id: 'memory',
@@ -18,9 +19,10 @@ const games = [
     name_eu: 'Soinu Memory',
     description_es: 'Asocia imágenes con sus sonidos',
     description_eu: 'Lotu irudiak haien soinuekin',
-    icon: Music2,
-    color: '#ec4899',
-    available: true,
+    icon: Trophy,
+    iconBg: 'bg-orange-100',
+    iconColor: 'text-orange-500',
+    borderColor: 'border-l-orange-500',
   },
   {
     id: 'missions',
@@ -29,38 +31,44 @@ const games = [
     description_es: '3 objetivos para hoy',
     description_eu: 'Gaurko 3 helburu',
     icon: Target,
-    color: '#f59e0b',
-    available: false,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-500',
+    borderColor: 'border-l-blue-500',
   },
+];
+
+const secondaryGames = [
   {
     id: 'collections',
     name_es: 'Colecciones',
     name_eu: 'Bildumak',
-    description_es: 'Completa tu colección de sonidos',
-    description_eu: 'Osatu zure soinu bilduma',
-    icon: Star,
-    color: '#10b981',
-    available: false,
+    icon: LayoutGrid,
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+  },
+  {
+    id: 'profile',
+    name_es: 'Perfil & Badges',
+    name_eu: 'Profila & Insigniak',
+    icon: User,
+    iconBg: 'bg-pink-100',
+    iconColor: 'text-pink-500',
   },
   {
     id: 'challenge',
     name_es: '1 vs 1',
     name_eu: '1 vs 1',
-    description_es: 'Desafía a otros jugadores',
-    description_eu: 'Desafiatu beste jokalari batzuk',
-    icon: Users,
-    color: '#3b82f6',
-    available: false,
+    icon: Swords,
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-500',
   },
   {
     id: 'ranking',
     name_es: 'Ranking',
     name_eu: 'Sailkapena',
-    description_es: 'Compite por el primer puesto',
-    description_eu: 'Lehiatu lehen postuagatik',
-    icon: Trophy,
-    color: '#ef4444',
-    available: false,
+    icon: Award,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
   },
 ];
 
@@ -68,68 +76,83 @@ export function GamesPage() {
   const { language } = useLanguage();
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
-        {/* User profile placeholder */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8 max-w-md mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white text-2xl font-bold">
-              U
+    <main className="min-h-[calc(100vh-64px)] bg-gray-50 py-8">
+      <div className="container mx-auto px-4 max-w-2xl">
+        {/* User profile card with gradient */}
+        <div className="bg-gradient-to-r from-purple-500 to-purple-400 rounded-2xl shadow-lg p-6 mb-6 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/30 rounded-full flex items-center justify-center">
+                <User className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h2 className="font-bold text-xl">{language === 'es' ? 'Usuario' : 'Erabiltzailea'}</h2>
+                <p className="text-white/80 text-sm">Level Explorer</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-lg">{language === 'es' ? 'Usuario' : 'Erabiltzailea'}</h2>
-              <p className="text-gray-500 text-sm">Level Explorer</p>
+            <div className="text-right">
+              <div className="flex items-center gap-1 text-sm">
+                <Coins className="w-4 h-4" />
+                <span>Coins</span>
+              </div>
             </div>
           </div>
           <div className="mt-4">
-            <div className="flex justify-between text-sm mb-1">
+            <div className="flex justify-between text-sm mb-2">
               <span>XP</span>
               <span>0 XP</span>
             </div>
-            <div className="h-2 bg-gray-200 rounded-full">
-              <div className="h-full bg-[#1e3a5f] rounded-full w-0"></div>
+            <div className="h-2 bg-white/30 rounded-full overflow-hidden">
+              <div className="h-full bg-green-400 rounded-full w-1/4"></div>
             </div>
           </div>
         </div>
 
-        {/* Games grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {games.map((game) => {
+        {/* Main games - horizontal cards */}
+        <div className="space-y-3 mb-6">
+          {mainGames.map((game) => {
             const IconComponent = game.icon;
             return (
               <button
                 key={game.id}
-                disabled={!game.available}
-                className={`bg-white rounded-xl shadow-md overflow-hidden text-left transition-all ${
-                  game.available
-                    ? 'hover:shadow-lg hover:scale-[1.02] cursor-pointer'
-                    : 'opacity-60 cursor-not-allowed'
-                }`}
+                className={`w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden text-left transition-all hover:shadow-md flex items-center gap-4 p-4 border-l-4 ${game.borderColor}`}
               >
-                <div
-                  className="h-24 flex items-center justify-center"
-                  style={{ backgroundColor: game.available ? game.color : '#9ca3af' }}
-                >
-                  <IconComponent size={40} className="text-white" />
+                <div className={`w-12 h-12 ${game.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
+                  <IconComponent className={`w-6 h-6 ${game.iconColor}`} />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-[#1e3a5f]">
+                <div>
+                  <h3 className="font-semibold text-gray-900">
                     {language === 'es' ? game.name_es : game.name_eu}
                   </h3>
                   <p className="text-gray-500 text-sm">
                     {language === 'es' ? game.description_es : game.description_eu}
                   </p>
-                  {!game.available && (
-                    <span className="inline-block mt-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                      {language === 'es' ? 'Próximamente' : 'Laster'}
-                    </span>
-                  )}
                 </div>
               </button>
             );
           })}
         </div>
+
+        {/* Secondary games - grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {secondaryGames.map((game) => {
+            const IconComponent = game.icon;
+            return (
+              <button
+                key={game.id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center transition-all hover:shadow-md"
+              >
+                <div className={`w-12 h-12 ${game.iconBg} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+                  <IconComponent className={`w-6 h-6 ${game.iconColor}`} />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-sm">
+                  {language === 'es' ? game.name_es : game.name_eu}
+                </h3>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
