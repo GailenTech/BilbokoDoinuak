@@ -91,8 +91,11 @@ export class LocalStorageAdapter implements StorageAdapter {
       return {
         odisea2xp: progress.odisea2xp ?? 0,
         level: progress.level ?? 1,
+        coins: progress.coins ?? 0,
         badges: progress.badges ?? [],
         gamesPlayed: progress.gamesPlayed ?? [],
+        dailyMissions: progress.dailyMissions,
+        unlockedSounds: progress.unlockedSounds ?? [],
       };
     } catch {
       console.error('Error reading progress from localStorage');

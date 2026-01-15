@@ -53,13 +53,19 @@ export interface Badge {
  * Available badge identifiers
  */
 export type BadgeId =
+  // Original badges
   | 'first_quiz'
   | 'first_memory'
   | 'perfect_quiz'
   | 'fast_memory'
   | 'level_2'
   | 'level_3'
-  | 'level_4';
+  | 'level_4'
+  // New badges from Base44
+  | 'novato'
+  | 'oido_fino'
+  | 'racha_5'
+  | 'veterano';
 
 /**
  * Record of a single game played
@@ -73,13 +79,25 @@ export interface GameRecord {
 }
 
 /**
+ * Daily missions state stored in progress
+ */
+export interface DailyMissionsState {
+  date: string;
+  progress: Record<string, number>;
+  claimed: string[];
+}
+
+/**
  * User's game progress including XP, level, badges, and history
  */
 export interface GameProgress {
   odisea2xp: number;
   level: number;
+  coins: number;
   badges: Badge[];
   gamesPlayed: GameRecord[];
+  dailyMissions?: DailyMissionsState;
+  unlockedSounds: string[]; // IDs of sounds unlocked through gameplay
 }
 
 /**
@@ -109,8 +127,10 @@ export function getDefaultProgress(): GameProgress {
   return {
     odisea2xp: 0,
     level: 1,
+    coins: 0,
     badges: [],
     gamesPlayed: [],
+    unlockedSounds: [],
   };
 }
 
@@ -121,6 +141,8 @@ export function getDefaultProgress(): GameProgress {
 export const DEFAULT_PROGRESS: GameProgress = {
   odisea2xp: 0,
   level: 1,
+  coins: 0,
   badges: [],
   gamesPlayed: [],
+  unlockedSounds: [],
 };

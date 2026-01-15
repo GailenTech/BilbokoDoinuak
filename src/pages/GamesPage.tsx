@@ -32,7 +32,7 @@ const mainGames = [
   },
   {
     id: 'missions',
-    path: null,
+    path: '/games/missions',
     name_es: 'Misiones Diarias',
     name_eu: 'Eguneko Misioak',
     description_es: '3 objetivos para hoy',
@@ -41,13 +41,14 @@ const mainGames = [
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-500',
     borderColor: 'border-l-blue-500',
-    enabled: false,
+    enabled: true,
   },
 ];
 
 const secondaryGames = [
   {
     id: 'collections',
+    path: null,
     name_es: 'Colecciones',
     name_eu: 'Bildumak',
     description_es: 'Descubre sonidos',
@@ -59,6 +60,7 @@ const secondaryGames = [
   },
   {
     id: 'profile',
+    path: '/games/profile',
     name_es: 'Perfil & Chapas',
     name_eu: 'Profila eta Txapak',
     description_es: 'Tus logros',
@@ -66,10 +68,11 @@ const secondaryGames = [
     icon: User,
     iconBg: 'bg-pink-100',
     iconColor: 'text-pink-500',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'challenge',
+    path: null,
     name_es: '1 vs 1',
     name_eu: '1 vs 1',
     description_es: 'Reta a amigos',
@@ -81,6 +84,7 @@ const secondaryGames = [
   },
   {
     id: 'ranking',
+    path: null,
     name_es: 'Ranking',
     name_eu: 'Sailkapena',
     description_es: 'Clasificacion',
@@ -208,6 +212,27 @@ export function GamesPage() {
         <div className="grid grid-cols-2 gap-3">
           {secondaryGames.map((game) => {
             const IconComponent = game.icon;
+
+            if (game.enabled && game.path) {
+              return (
+                <button
+                  key={game.id}
+                  onClick={() => navigate(game.path!)}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 text-center relative hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className={`w-12 h-12 ${game.iconBg} rounded-xl flex items-center justify-center mx-auto mb-2`}>
+                    <IconComponent className={`w-6 h-6 ${game.iconColor}`} />
+                  </div>
+                  <h3 className="font-semibold text-gray-700 text-sm">
+                    {language === 'es' ? game.name_es : game.name_eu}
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {language === 'es' ? game.description_es : game.description_eu}
+                  </p>
+                </button>
+              );
+            }
+
             return (
               <div
                 key={game.id}

@@ -6,9 +6,9 @@ export const FEATURE_TOGGLES = {
   games: {
     quiz: true,           // Quiz Sonoro - Implemented
     memory: true,         // Memory Sonoro - Implemented
-    missions: false,      // Misiones Diarias - TODO
+    missions: true,       // Misiones Diarias - Implemented
     collections: false,   // Colecciones - TODO
-    profile: false,       // Perfil & Chapas - TODO
+    profile: true,        // Perfil & Chapas - Implemented
     challenge: false,     // 1 vs 1 - TODO
     ranking: false,       // Ranking - TODO
   },
