@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { StorageAdapter, GameProgress, BadgeId, GameRecord, UserProfile, AgeRange, Gender, Barrio } from '../lib/persistence/types';
-import { LocalStorageAdapter, getDefaultProgress, getLevelInfoFromXP, calculateLevelProgress, getXPForNextLevel } from '../lib/persistence';
+import { LocalStorageAdapter, SupabaseAdapter, getDefaultProgress, getLevelInfoFromXP, calculateLevelProgress, getXPForNextLevel } from '../lib/persistence';
+import { useAuth } from './AuthContext';
 
 interface ProfileFormData {
   ageRange: AgeRange;
@@ -41,18 +42,55 @@ interface PersistenceProviderProps {
 }
 
 export function PersistenceProvider({ children, adapter }: PersistenceProviderProps) {
-  const [storageAdapter] = useState<StorageAdapter>(() => adapter ?? new LocalStorageAdapter());
+  const { user, isAuthenticated, isLoading: authLoading, isSupabaseEnabled } = useAuth();
+
+  // Create adapters - one for each mode
+  const localAdapterRef = useRef(new LocalStorageAdapter());
+  const supabaseAdapterRef = useRef<SupabaseAdapter | null>(null);
+
+  // Initialize Supabase adapter only if Supabase is enabled
+  useEffect(() => {
+    if (isSupabaseEnabled && !supabaseAdapterRef.current) {
+      supabaseAdapterRef.current = new SupabaseAdapter(user);
+    }
+    if (supabaseAdapterRef.current) {
+      supabaseAdapterRef.current.setUser(user);
+    }
+  }, [user, isSupabaseEnabled]);
+
+  // Get the appropriate adapter based on auth state
+  const getActiveAdapter = useCallback((): StorageAdapter => {
+    if (adapter) return adapter;
+    if (isAuthenticated && supabaseAdapterRef.current) {
+      return supabaseAdapterRef.current;
+    }
+    return localAdapterRef.current;
+  }, [adapter, isAuthenticated]);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [progress, setProgress] = useState<GameProgress>(getDefaultProgress);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMigrated, setHasMigrated] = useState(false);
 
-  // Load initial data (profile + progress)
+  // Load data when auth state changes
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
     const loadData = async () => {
+      setIsLoading(true);
       try {
+        const activeAdapter = getActiveAdapter();
+
+        // If user just authenticated and we haven't migrated yet, do it now
+        if (isAuthenticated && !hasMigrated && supabaseAdapterRef.current) {
+          await supabaseAdapterRef.current.migrateFromLocalStorage();
+          setHasMigrated(true);
+        }
+
         const [loadedProfile, loadedProgress] = await Promise.all([
-          storageAdapter.getProfile(),
-          storageAdapter.getProgress(),
+          activeAdapter.getProfile(),
+          activeAdapter.getProgress(),
         ]);
         setProfile(loadedProfile);
         setProgress(loadedProgress);
@@ -64,17 +102,24 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
     };
 
     loadData();
-  }, [storageAdapter]);
+  }, [authLoading, isAuthenticated, getActiveAdapter, hasMigrated]);
+
+  // Reset migration flag when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasMigrated(false);
+    }
+  }, [isAuthenticated]);
 
   // Refresh progress from storage
   const refreshProgress = useCallback(async () => {
     try {
-      const loaded = await storageAdapter.getProgress();
+      const loaded = await getActiveAdapter().getProgress();
       setProgress(loaded);
     } catch (error) {
       console.error('Failed to refresh progress:', error);
     }
-  }, [storageAdapter]);
+  }, [getActiveAdapter]);
 
   // Add XP and return level up info
   const addXP = useCallback(async (amount: number) => {
@@ -82,7 +127,7 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
     const oldLevel = oldProgress.level;
     const oldBadgeIds = new Set(oldProgress.badges.map(b => b.id));
 
-    const newProgress = await storageAdapter.addXP(amount);
+    const newProgress = await getActiveAdapter().addXP(amount);
     setProgress(newProgress);
 
     const leveledUp = newProgress.level > oldLevel;
@@ -91,27 +136,27 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
       .map(b => b.id);
 
     return { leveledUp, newBadges };
-  }, [storageAdapter, progress]);
+  }, [getActiveAdapter, progress]);
 
   // Unlock badge
   const unlockBadge = useCallback(async (badgeId: BadgeId) => {
-    await storageAdapter.unlockBadge(badgeId);
+    await getActiveAdapter().unlockBadge(badgeId);
     await refreshProgress();
-  }, [storageAdapter, refreshProgress]);
+  }, [getActiveAdapter, refreshProgress]);
 
   // Record game
   const recordGame = useCallback(async (record: Omit<GameRecord, 'playedAt'>) => {
-    await storageAdapter.recordGame(record);
+    await getActiveAdapter().recordGame(record);
     await refreshProgress();
-  }, [storageAdapter, refreshProgress]);
+  }, [getActiveAdapter, refreshProgress]);
 
   // Save user profile
   const saveUserProfile = useCallback(async (data: ProfileFormData) => {
     const now = new Date().toISOString();
     const newProfile: UserProfile = {
-      id: profile?.id ?? crypto.randomUUID(),
-      displayName: profile?.displayName ?? '',
-      avatarUrl: profile?.avatarUrl,
+      id: user?.id ?? profile?.id ?? crypto.randomUUID(),
+      displayName: user?.user_metadata?.full_name ?? profile?.displayName ?? '',
+      avatarUrl: user?.user_metadata?.avatar_url ?? profile?.avatarUrl,
       ageRange: data.ageRange,
       gender: data.gender,
       barrio: data.barrio,
@@ -119,9 +164,9 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
       createdAt: profile?.createdAt ?? now,
       lastLoginAt: now,
     };
-    await storageAdapter.saveProfile(newProfile);
+    await getActiveAdapter().saveProfile(newProfile);
     setProfile(newProfile);
-  }, [storageAdapter, profile]);
+  }, [getActiveAdapter, profile, user]);
 
   // Derived values
   const isProfileComplete = profile?.profileCompleted ?? false;
@@ -133,7 +178,7 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
     profile,
     isProfileComplete,
     progress,
-    isLoading,
+    isLoading: isLoading || authLoading,
     levelInfo,
     levelProgress,
     xpForNextLevel,
@@ -142,7 +187,7 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
     unlockBadge,
     recordGame,
     refreshProgress,
-  }), [profile, isProfileComplete, progress, isLoading, levelInfo, levelProgress, xpForNextLevel, saveUserProfile, addXP, unlockBadge, recordGame, refreshProgress]);
+  }), [profile, isProfileComplete, progress, isLoading, authLoading, levelInfo, levelProgress, xpForNextLevel, saveUserProfile, addXP, unlockBadge, recordGame, refreshProgress]);
 
   return (
     <PersistenceContext.Provider value={value}>

@@ -217,3 +217,112 @@ approachSegments: [
 - [ ] Añadir filtros de emociones en el mapa
 - [ ] Implementar Misiones Diarias
 - [ ] Despliegue a Cloudflare Pages
+
+---
+
+## 2026-01-15 (continuación) - Integración de Supabase Auth
+
+### Qué se ha hecho
+
+#### Instalación de dependencias
+- `@supabase/supabase-js` - Cliente de Supabase
+- `@supabase/auth-ui-react` - Componentes de UI para autenticación (disponible para uso futuro)
+- `@supabase/auth-ui-shared` - Temas compartidos para auth UI
+
+#### Cliente Supabase (`src/lib/supabase/client.ts`)
+- Configuración con variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY
+- Fallback si no hay credenciales (la app funciona sin Supabase)
+- Export de `isSupabaseConfigured` para saber si está habilitado
+- Log de estado en modo desarrollo
+
+#### SupabaseAdapter (`src/lib/persistence/SupabaseAdapter.ts`)
+- Implementa la interface `StorageAdapter` existente
+- Mapeo de tipos entre aplicación y base de datos:
+  - `UserProfile` <-> `profiles` table
+  - `GameProgress` <-> `progress` table
+- Fallback automático a `LocalStorageAdapter` cuando:
+  - Supabase no está configurado
+  - Usuario no está autenticado
+- Método `migrateFromLocalStorage()` para migrar datos locales a la nube al autenticarse
+
+#### AuthContext (`src/context/AuthContext.tsx`)
+- Gestión de estado de autenticación (user, session, isLoading)
+- Métodos: `signInWithGoogle()`, `signOut()`
+- Escucha cambios de sesión con `onAuthStateChange`
+- Export de `isSupabaseEnabled` para componentes
+
+#### AuthButton (`src/components/AuthButton.tsx`)
+- Variantes: `full` (con texto) y `compact` (solo iconos)
+- Estado no autenticado: botón "Iniciar con Google" con logo de Google
+- Estado autenticado: avatar + nombre + botón logout
+- Se oculta automáticamente si Supabase no está configurado
+- Soporte bilingüe (ES/EU)
+
+#### PersistenceContext actualizado
+- Detecta si hay usuario autenticado
+- Usa `SupabaseAdapter` si está autenticado, `LocalStorageAdapter` si no
+- Migra datos de localStorage a Supabase al autenticarse por primera vez
+- Flag `hasMigrated` para evitar migraciones duplicadas
+
+#### App.tsx actualizado
+- Añadido `AuthProvider` wrapping `PersistenceProvider`
+- Orden de providers: Language > Auth > Persistence > Router
+
+### Archivos de configuración
+
+#### `.env.example`
+```
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+#### `docs/supabase-schema.sql`
+- Tabla `profiles` con todos los campos de UserProfile
+- Tabla `progress` con todos los campos de GameProgress
+- Row Level Security (RLS) policies para ambas tablas
+- Índices para búsquedas comunes
+- Trigger para actualizar `updated_at` automáticamente
+- Instrucciones para configurar Google OAuth
+
+### Correcciones de código preexistentes
+- Añadidos badges faltantes en `levelSystem.ts`: novato, oido_fino, racha_5, veterano
+- Añadidas propiedades faltantes en test: coins, unlockedSounds
+- Eliminada referencia a `ProfilePage` que no existía
+
+### Verificación
+- [x] Build de producción exitoso (664 KB JS)
+- [x] 43 tests pasando
+- [x] App funciona sin credenciales de Supabase (solo localStorage)
+- [x] Tipos TypeScript correctos
+
+### Arquitectura de autenticación
+
+```
+                    ┌──────────────────┐
+                    │   AuthProvider   │
+                    │  (gestiona auth) │
+                    └────────┬─────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │PersistenceProvider│
+                    │ (elige adapter)  │
+                    └────────┬─────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           │                 │                 │
+    ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐
+    │ No Supabase │   │  Supabase   │   │  Supabase   │
+    │ configurado │   │ Sin login   │   │ Con login   │
+    └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
+           │                 │                 │
+    ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐
+    │ localStorage│   │ localStorage│   │  Supabase   │
+    │  Adapter    │   │  Adapter    │   │  Adapter    │
+    └─────────────┘   └─────────────┘   └─────────────┘
+```
+
+### Próximos pasos
+- [ ] Añadir AuthButton al Header
+- [ ] Probar flujo completo con proyecto Supabase real
+- [ ] Implementar sincronización bidireccional (merge de datos)
+- [ ] Añadir soporte para otros providers (Apple, GitHub)

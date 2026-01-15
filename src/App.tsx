@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider } from './context/AuthContext';
 import { PersistenceProvider } from './context/PersistenceContext';
 import { Header } from './components/Header';
 import { ProfileForm } from './components/ProfileForm';
@@ -11,12 +12,12 @@ import { QuizGame } from './pages/QuizGame';
 import { MemoryGame } from './pages/MemoryGame';
 import { MissionsPage } from './pages/MissionsPage';
 import { CollectionsPage } from './pages/CollectionsPage';
-import { ProfilePage } from './pages/ProfilePage';
 import { AdminPage } from './pages/AdminPage';
 
 function App() {
   return (
     <LanguageProvider>
+      <AuthProvider>
       <PersistenceProvider>
       <BrowserRouter>
         <div className="min-h-screen bg-white">
@@ -31,12 +32,12 @@ function App() {
             <Route path="/games/memory" element={<MemoryGame />} />
             <Route path="/games/missions" element={<MissionsPage />} />
             <Route path="/games/collections" element={<CollectionsPage />} />
-            <Route path="/games/profile" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </div>
       </BrowserRouter>
       </PersistenceProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 }

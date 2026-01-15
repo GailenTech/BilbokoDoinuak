@@ -30,6 +30,7 @@ export {
 
 // Adapters
 export { LocalStorageAdapter } from './LocalStorageAdapter';
+export { SupabaseAdapter } from './SupabaseAdapter';
 
 // Level System
 export {
