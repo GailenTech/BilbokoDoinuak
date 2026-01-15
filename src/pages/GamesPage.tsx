@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { Play, Trophy, Target, LayoutGrid, User, Swords, Award, Coins } from 'lucide-react';
 
 const mainGames = [
   {
     id: 'quiz',
+    path: '/games/quiz',
     name_es: 'Quiz Sonoro',
     name_eu: 'Soinu Quiz',
     description_es: 'Adivina los sonidos y gana XP',
@@ -12,9 +14,11 @@ const mainGames = [
     iconBg: 'bg-green-100',
     iconColor: 'text-green-500',
     borderColor: 'border-l-green-500',
+    enabled: true,
   },
   {
     id: 'memory',
+    path: '/games/memory',
     name_es: 'Memory Sonoro',
     name_eu: 'Soinu Memory',
     description_es: 'Asocia imágenes con sus sonidos',
@@ -23,9 +27,11 @@ const mainGames = [
     iconBg: 'bg-orange-100',
     iconColor: 'text-orange-500',
     borderColor: 'border-l-orange-500',
+    enabled: true,
   },
   {
     id: 'missions',
+    path: null,
     name_es: 'Misiones Diarias',
     name_eu: 'Eguneko Misioak',
     description_es: '3 objetivos para hoy',
@@ -34,6 +40,7 @@ const mainGames = [
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-500',
     borderColor: 'border-l-blue-500',
+    enabled: false,
   },
 ];
 
@@ -74,6 +81,7 @@ const secondaryGames = [
 
 export function GamesPage() {
   const { language } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <main className="min-h-[calc(100vh-64px)] bg-gray-50 py-8">
@@ -115,12 +123,18 @@ export function GamesPage() {
             return (
               <button
                 key={game.id}
-                className={`w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden text-left transition-all hover:shadow-md flex items-center gap-4 p-4 border-l-4 ${game.borderColor}`}
+                onClick={() => game.path && navigate(game.path)}
+                disabled={!game.enabled}
+                className={`w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden text-left transition-all flex items-center gap-4 p-4 border-l-4 ${game.borderColor} ${
+                  game.enabled
+                    ? 'hover:shadow-md cursor-pointer'
+                    : 'opacity-50 cursor-not-allowed'
+                }`}
               >
                 <div className={`w-12 h-12 ${game.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
                   <IconComponent className={`w-6 h-6 ${game.iconColor}`} />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">
                     {language === 'es' ? game.name_es : game.name_eu}
                   </h3>
@@ -128,6 +142,11 @@ export function GamesPage() {
                     {language === 'es' ? game.description_es : game.description_eu}
                   </p>
                 </div>
+                {!game.enabled && (
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">
+                    {language === 'es' ? 'Próximamente' : 'Laster'}
+                  </span>
+                )}
               </button>
             );
           })}

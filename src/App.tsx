@@ -5,6 +5,8 @@ import { Home } from './pages/Home';
 import { MapPage } from './pages/MapPage';
 import { RoutesPage } from './pages/RoutesPage';
 import { GamesPage } from './pages/GamesPage';
+import { QuizGame } from './pages/QuizGame';
+import { MemoryGame } from './pages/MemoryGame';
 import { AdminPage } from './pages/AdminPage';
 
 function App() {
@@ -18,6 +20,8 @@ function App() {
             <Route path="/map" element={<MapPage />} />
             <Route path="/routes" element={<RoutesPage />} />
             <Route path="/games" element={<GamesPage />} />
+            <Route path="/games/quiz" element={<QuizGame />} />
+            <Route path="/games/memory" element={<MemoryGame />} />
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </div>
