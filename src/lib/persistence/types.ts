@@ -1,10 +1,42 @@
 /**
+ * Age range options
+ */
+export type AgeRange = 'under_18' | '18_30' | '31_50' | '51_65' | 'over_65';
+
+/**
+ * Gender options
+ */
+export type Gender = 'female' | 'male' | 'non_binary' | 'prefer_not_say';
+
+/**
+ * Bilbao neighborhood options
+ */
+export type Barrio =
+  | 'san_ignacio'
+  | 'abando'
+  | 'basurto'
+  | 'begona'
+  | 'deusto'
+  | 'errekaldeberri'
+  | 'indautxu'
+  | 'iralabarri'
+  | 'otxarkoaga'
+  | 'rekalde'
+  | 'santutxu'
+  | 'txurdinaga'
+  | 'otro';
+
+/**
  * User profile information
  */
 export interface UserProfile {
   id: string;
   displayName: string;
   avatarUrl?: string;
+  ageRange?: AgeRange;
+  gender?: Gender;
+  barrio?: Barrio;
+  profileCompleted: boolean;
   createdAt: string;
   lastLoginAt: string;
 }

@@ -6,6 +6,9 @@ export type {
   GameRecord,
   GameProgress,
   StorageAdapter,
+  AgeRange,
+  Gender,
+  Barrio,
 } from './types';
 
 export { DEFAULT_PROGRESS, getDefaultProgress } from './types';

@@ -27,6 +27,7 @@ describe('LocalStorageAdapter', () => {
         id: 'test-user-123',
         displayName: 'Test User',
         avatarUrl: 'https://example.com/avatar.png',
+        profileCompleted: true,
         createdAt: '2024-01-01T00:00:00Z',
         lastLoginAt: '2024-01-15T10:30:00Z',
       };
@@ -41,6 +42,7 @@ describe('LocalStorageAdapter', () => {
       const originalProfile: UserProfile = {
         id: 'test-user-123',
         displayName: 'Original Name',
+        profileCompleted: false,
         createdAt: '2024-01-01T00:00:00Z',
         lastLoginAt: '2024-01-15T10:30:00Z',
       };

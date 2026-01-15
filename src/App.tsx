@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 import { PersistenceProvider } from './context/PersistenceContext';
 import { Header } from './components/Header';
+import { ProfileForm } from './components/ProfileForm';
 import { Home } from './pages/Home';
 import { MapPage } from './pages/MapPage';
 import { RoutesPage } from './pages/RoutesPage';
@@ -19,6 +20,7 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/profile" element={<ProfileForm />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/routes" element={<RoutesPage />} />
             <Route path="/games" element={<GamesPage />} />

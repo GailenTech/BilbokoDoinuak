@@ -1,9 +1,19 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import type { StorageAdapter, GameProgress, BadgeId, GameRecord } from '../lib/persistence/types';
+import type { StorageAdapter, GameProgress, BadgeId, GameRecord, UserProfile, AgeRange, Gender, Barrio } from '../lib/persistence/types';
 import { LocalStorageAdapter, getDefaultProgress, getLevelInfoFromXP, calculateLevelProgress, getXPForNextLevel } from '../lib/persistence';
 
+interface ProfileFormData {
+  ageRange: AgeRange;
+  gender: Gender;
+  barrio: Barrio;
+}
+
 interface PersistenceContextValue {
+  // Profile state
+  profile: UserProfile | null;
+  isProfileComplete: boolean;
+
   // Progress state
   progress: GameProgress;
   isLoading: boolean;
@@ -13,7 +23,10 @@ interface PersistenceContextValue {
   levelProgress: number;
   xpForNextLevel: ReturnType<typeof getXPForNextLevel>;
 
-  // Actions
+  // Profile actions
+  saveUserProfile: (data: ProfileFormData) => Promise<void>;
+
+  // Progress actions
   addXP: (amount: number) => Promise<{ leveledUp: boolean; newBadges: BadgeId[] }>;
   unlockBadge: (badgeId: BadgeId) => Promise<void>;
   recordGame: (record: Omit<GameRecord, 'playedAt'>) => Promise<void>;
@@ -29,23 +42,28 @@ interface PersistenceProviderProps {
 
 export function PersistenceProvider({ children, adapter }: PersistenceProviderProps) {
   const [storageAdapter] = useState<StorageAdapter>(() => adapter ?? new LocalStorageAdapter());
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [progress, setProgress] = useState<GameProgress>(getDefaultProgress);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load initial progress
+  // Load initial data (profile + progress)
   useEffect(() => {
-    const loadProgress = async () => {
+    const loadData = async () => {
       try {
-        const loaded = await storageAdapter.getProgress();
-        setProgress(loaded);
+        const [loadedProfile, loadedProgress] = await Promise.all([
+          storageAdapter.getProfile(),
+          storageAdapter.getProgress(),
+        ]);
+        setProfile(loadedProfile);
+        setProgress(loadedProgress);
       } catch (error) {
-        console.error('Failed to load progress:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadProgress();
+    loadData();
   }, [storageAdapter]);
 
   // Refresh progress from storage
@@ -87,22 +105,44 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
     await refreshProgress();
   }, [storageAdapter, refreshProgress]);
 
+  // Save user profile
+  const saveUserProfile = useCallback(async (data: ProfileFormData) => {
+    const now = new Date().toISOString();
+    const newProfile: UserProfile = {
+      id: profile?.id ?? crypto.randomUUID(),
+      displayName: profile?.displayName ?? '',
+      avatarUrl: profile?.avatarUrl,
+      ageRange: data.ageRange,
+      gender: data.gender,
+      barrio: data.barrio,
+      profileCompleted: true,
+      createdAt: profile?.createdAt ?? now,
+      lastLoginAt: now,
+    };
+    await storageAdapter.saveProfile(newProfile);
+    setProfile(newProfile);
+  }, [storageAdapter, profile]);
+
   // Derived values
+  const isProfileComplete = profile?.profileCompleted ?? false;
   const levelInfo = useMemo(() => getLevelInfoFromXP(progress.odisea2xp), [progress.odisea2xp]);
   const levelProgress = useMemo(() => calculateLevelProgress(progress.odisea2xp), [progress.odisea2xp]);
   const xpForNextLevel = useMemo(() => getXPForNextLevel(progress.odisea2xp), [progress.odisea2xp]);
 
   const value: PersistenceContextValue = useMemo(() => ({
+    profile,
+    isProfileComplete,
     progress,
     isLoading,
     levelInfo,
     levelProgress,
     xpForNextLevel,
+    saveUserProfile,
     addXP,
     unlockBadge,
     recordGame,
     refreshProgress,
-  }), [progress, isLoading, levelInfo, levelProgress, xpForNextLevel, addXP, unlockBadge, recordGame, refreshProgress]);
+  }), [profile, isProfileComplete, progress, isLoading, levelInfo, levelProgress, xpForNextLevel, saveUserProfile, addXP, unlockBadge, recordGame, refreshProgress]);
 
   return (
     <PersistenceContext.Provider value={value}>

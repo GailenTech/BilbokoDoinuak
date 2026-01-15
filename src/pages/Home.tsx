@@ -1,14 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { usePersistence } from '../context/PersistenceContext';
 import { Globe } from 'lucide-react';
 
 export function Home() {
   const { setLanguage } = useLanguage();
+  const { isProfileComplete, isLoading } = usePersistence();
   const navigate = useNavigate();
 
   const selectLanguage = (lang: 'es' | 'eu') => {
     setLanguage(lang);
-    navigate('/map');
+    // If profile is not complete, go to profile form; otherwise go to map
+    if (!isLoading && !isProfileComplete) {
+      navigate('/profile');
+    } else {
+      navigate('/map');
+    }
   };
 
   return (
