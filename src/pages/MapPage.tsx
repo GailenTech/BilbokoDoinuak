@@ -51,15 +51,17 @@ export function MapPage() {
     ? soundPoints.filter(p => p.routes.includes(selectedRoute))
     : soundPoints;
 
-  // Get route color and path coordinates for polyline
-  const selectedRouteData = routesData.find(r => r.id === selectedRoute);
+  // Get route data including pre-calculated geometry
+  const selectedRouteData = routesData.find(r => r.id === selectedRoute) as {
+    id: string;
+    color: string;
+    geometry?: [number, number][];
+  } | undefined;
   const routeColor = selectedRouteData?.color || '#171717';
 
-  // Create path coordinates from filtered points (sorted by latitude for a logical path)
-  const routePath: [number, number][] = selectedRoute
-    ? filteredPoints
-        .sort((a, b) => a.latitude - b.latitude)
-        .map(p => [p.latitude, p.longitude] as [number, number])
+  // Use pre-calculated route geometry (follows streets) or fallback to straight lines
+  const routePath: [number, number][] = selectedRoute && selectedRouteData?.geometry
+    ? selectedRouteData.geometry
     : [];
 
   const center: [number, number] = [43.278, -2.961];
