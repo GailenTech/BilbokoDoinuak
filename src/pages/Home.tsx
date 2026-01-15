@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { Globe } from 'lucide-react';
 
 export function Home() {
   const { setLanguage } = useLanguage();
@@ -11,54 +12,59 @@ export function Home() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-[#1e3a5f] to-[#2d5a87]">
-      <div className="max-w-2xl mx-auto px-4 text-center">
-        {/* Logo */}
-        <div className="mb-8">
-          <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6936cdc7a410f6ff280751de/3a0c01149_logo.png"
-            alt="Bilboko Doinuak"
-            className="h-24 mx-auto"
-          />
-        </div>
+    <main>
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-white to-blue-50">
+        <div className="w-full max-w-2xl">
+          {/* Card with top border accent */}
+          <div className="rounded-xl border bg-white shadow-2xl border-t-4 border-t-red-600">
+            {/* Card header/content */}
+            <div className="flex flex-col p-6 text-center space-y-4 pb-8">
+              {/* Globe icon */}
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
+                <Globe className="w-8 h-8 text-red-600" />
+              </div>
 
-        {/* Welcome text - bilingual */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-8 text-white">
-          <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              Bienvenido al mapa sonoro de San Ignacio
-            </h1>
-            <p className="text-white/80">
-              Elige tu idioma para explorar los sonidos del barrio y jugar con la memoria sonora.
-            </p>
+              {/* Spanish welcome */}
+              <div className="space-y-2 pb-4 border-b border-gray-200">
+                <h1 className="tracking-tight text-3xl font-black text-gray-900">
+                  Bienvenido al mapa sonoro de San Ignacio
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Elige tu idioma para explorar los sonidos del barrio y jugar con la memoria sonora.
+                </p>
+              </div>
+
+              {/* Basque welcome */}
+              <div className="space-y-2 pt-2">
+                <h2 className="tracking-tight text-3xl font-black text-gray-900">
+                  Ongi etorri San Inazioko soinu-mapara
+                </h2>
+                <p className="text-gray-600 text-lg">
+                  Aukeratu hizkuntza, auzoko soinuak entzuteko eta memoria-jokoan parte hartzeko.
+                </p>
+              </div>
+            </div>
+
+            {/* Card footer with buttons */}
+            <div className="p-6 pt-0 pb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => selectLanguage('eu')}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md transition-colors shadow px-4 py-2 h-16 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Euskara
+                </button>
+                <button
+                  onClick={() => selectLanguage('es')}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md transition-colors shadow px-4 py-2 h-16 text-lg font-bold bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Castellano / Gaztelania
+                </button>
+              </div>
+            </div>
           </div>
-
-          <div className="border-t border-white/20 pt-6">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">
-              Ongi etorri San Inazioko soinu-mapara
-            </h2>
-            <p className="text-white/80">
-              Aukeratu hizkuntza, auzoko soinuak entzuteko eta memoria-jokoan parte hartzeko.
-            </p>
-          </div>
-        </div>
-
-        {/* Language buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => selectLanguage('eu')}
-            className="px-8 py-4 bg-white text-[#1e3a5f] font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-lg text-lg"
-          >
-            Euskara
-          </button>
-          <button
-            onClick={() => selectLanguage('es')}
-            className="px-8 py-4 bg-white/20 text-white font-bold rounded-xl hover:bg-white/30 transition-colors border-2 border-white/40 text-lg"
-          >
-            Castellano / Gaztelania
-          </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
