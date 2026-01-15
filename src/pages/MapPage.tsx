@@ -51,17 +51,23 @@ export function MapPage() {
     ? soundPoints.filter(p => p.routes.includes(selectedRoute))
     : soundPoints;
 
-  // Get route data including pre-calculated geometry
+  // Get route data including pre-calculated geometry and approach segments
   const selectedRouteData = routesData.find(r => r.id === selectedRoute) as {
     id: string;
     color: string;
     geometry?: [number, number][];
+    approachSegments?: { from: [number, number]; to: [number, number] }[];
   } | undefined;
   const routeColor = selectedRouteData?.color || '#171717';
 
   // Use pre-calculated route geometry (follows streets) or fallback to straight lines
   const routePath: [number, number][] = selectedRoute && selectedRouteData?.geometry
     ? selectedRouteData.geometry
+    : [];
+
+  // Approach segments: gray lines connecting markers to the main route
+  const approachSegments = selectedRoute && selectedRouteData?.approachSegments
+    ? selectedRouteData.approachSegments
     : [];
 
   const center: [number, number] = [43.278, -2.961];
@@ -101,7 +107,20 @@ export function MapPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {/* Route path line */}
+        {/* Approach segments: gray dashed lines connecting markers to the route */}
+        {selectedRoute && approachSegments.map((segment, index) => (
+          <Polyline
+            key={`approach-${index}`}
+            positions={[segment.from, segment.to]}
+            pathOptions={{
+              color: '#4b5563', // gray-600 for better contrast
+              weight: 4,
+              opacity: 0.9,
+              dashArray: '8, 8',
+            }}
+          />
+        ))}
+        {/* Main route path line */}
         {selectedRoute && routePath.length > 1 && (
           <Polyline
             positions={routePath}

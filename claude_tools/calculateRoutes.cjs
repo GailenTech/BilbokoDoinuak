@@ -59,8 +59,33 @@ async function fetchRoute(coordinates) {
     throw new Error(`OSRM error: ${data.code}`);
   }
 
-  // Return the route geometry (array of [lon, lat] coordinates)
-  return data.routes[0].geometry.coordinates;
+  // Calculate approach segments (from original waypoint to snapped location on road)
+  // These are the gray connector lines shown in the original app
+  const approachSegments = [];
+  for (let i = 0; i < coordinates.length; i++) {
+    const original = coordinates[i]; // [lon, lat]
+    const snapped = data.waypoints[i].location; // [lon, lat] - where OSRM snapped to road
+
+    // Only add if there's a meaningful distance (more than ~5 meters)
+    const distance = Math.sqrt(
+      Math.pow(original[0] - snapped[0], 2) +
+      Math.pow(original[1] - snapped[1], 2)
+    ) * 111000; // Rough conversion to meters
+
+    if (distance > 5) {
+      approachSegments.push({
+        from: [original[1], original[0]], // Convert to [lat, lon] for Leaflet
+        to: [snapped[1], snapped[0]]       // Convert to [lat, lon] for Leaflet
+      });
+      console.log(`    Waypoint ${i}: approach segment of ~${Math.round(distance)}m`);
+    }
+  }
+
+  // Return both the route geometry and approach segments
+  return {
+    geometry: data.routes[0].geometry.coordinates,
+    approachSegments
+  };
 }
 
 async function calculateRoutesForAll() {
@@ -80,17 +105,18 @@ async function calculateRoutesForAll() {
     console.log(`  Using ${waypoints.length} waypoints in correct order`);
 
     try {
-      const geometry = await fetchRoute(waypoints);
-      console.log(`  Route calculated: ${geometry.length} coordinates`);
+      const { geometry, approachSegments } = await fetchRoute(waypoints);
+      console.log(`  Route calculated: ${geometry.length} coordinates, ${approachSegments.length} approach segments`);
 
       // Convert from [lon, lat] to [lat, lon] for Leaflet
       const leafletGeometry = geometry.map(([lon, lat]) => [lat, lon]);
 
-      // Remove old geometry and pointIds, add new geometry
-      const { geometry: _oldGeo, pointIds: _oldIds, ...routeData } = route;
+      // Remove old geometry and pointIds, add new geometry and approach segments
+      const { geometry: _oldGeo, pointIds: _oldIds, approachSegments: _oldApproach, ...routeData } = route;
       updatedRoutes.push({
         ...routeData,
-        geometry: leafletGeometry
+        geometry: leafletGeometry,
+        approachSegments: approachSegments
       });
     } catch (error) {
       console.error(`  Error: ${error.message}`);
