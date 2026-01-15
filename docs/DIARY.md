@@ -102,6 +102,60 @@ Proyecto de migración desde Base44 (plataforma no-code) a código propio para m
 - `fix(map): Remove sidebar, use overlay filters matching Base44 original`
 
 ### Próximos pasos
-- [ ] Implementar juego Quiz básico
-- [ ] Implementar juego Memory básico
+- [x] Implementar juego Quiz básico ✓
+- [x] Implementar juego Memory básico ✓
 - [ ] Añadir filtros de emociones en el mapa
+
+---
+
+## 2026-01-15 (continuación) - Implementación de juegos Quiz y Memory
+
+### Qué se ha hecho
+
+#### QuizGame (`/src/pages/QuizGame.tsx`)
+- Quiz de audio con 5 preguntas de opción múltiple
+- Diseño fiel al original de Base44:
+  - Icono de fuego con contador de racha
+  - Badge de puntos en azul
+  - Indicador de dificultad ("Fácil"/"Erraza")
+  - Icono de altavoz grande (w-24 h-24)
+  - Reproductor de audio completo con controles
+  - Barra de progreso mostrando pregunta actual
+  - Pantalla final con porcentaje de aciertos
+
+#### MemoryGame (`/src/pages/MemoryGame.tsx`)
+- Juego de emparejar cartas: imágenes con sus sonidos
+- Diseño fiel al original de Base44:
+  - Cartas de AUDIO en gradiente ROJO
+  - Cartas de IMAGEN en gradiente AZUL
+  - Contador "MOVIMIENTOS" / "MUGIMENDUAK"
+  - Botón "Reiniciar" / "Berrabiarazi"
+  - Al voltear carta de audio: icono de altavoz + "SONIDO"/"SOINUA"
+  - Grid 4x3 con 6 pares (12 cartas)
+  - Pantalla final con número de movimientos
+
+#### GamesPage actualizada
+- Navegación funcional a Quiz y Memory
+- Estado enabled/disabled para juegos
+- Badge "Próximamente"/"Laster" para juegos no implementados
+- Misiones Diarias marcado como próximamente
+
+### Correcciones durante desarrollo
+- **Import faltante**: Añadido `ArrowLeft` a QuizGame.tsx
+- **Variable no usada**: Prefijado `_matches` en MemoryGame.tsx para TypeScript
+
+### Verificación
+- [x] Build de producción exitoso (432 KB JS, 46 KB CSS)
+- [x] Quiz funciona: reproduce audio, valida respuestas, muestra resultados
+- [x] Memory funciona: voltea cartas, reproduce audio, detecta parejas
+- [x] Ambos juegos tienen soporte bilingüe (ES/EU)
+- [x] Screenshots comparativos muestran fidelidad al diseño original
+
+### Commits realizados
+- `feat(games): Implement Quiz and Memory games matching Base44 original`
+
+### Próximos pasos
+- [ ] Añadir filtros de emociones en el mapa
+- [ ] Implementar Misiones Diarias
+- [ ] Considerar persistencia ligera (localStorage para progreso de juegos)
+- [ ] Implementar sistema de XP y puntuación persistente
