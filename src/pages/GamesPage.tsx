@@ -48,7 +48,7 @@ const mainGames = [
 const secondaryGames = [
   {
     id: 'collections',
-    path: null,
+    path: '/games/collections',
     name_es: 'Colecciones',
     name_eu: 'Bildumak',
     description_es: 'Descubre sonidos',
@@ -56,7 +56,7 @@ const secondaryGames = [
     icon: LayoutGrid,
     iconBg: 'bg-amber-100',
     iconColor: 'text-amber-600',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'profile',

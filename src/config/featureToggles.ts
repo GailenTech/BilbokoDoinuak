@@ -7,7 +7,7 @@ export const FEATURE_TOGGLES = {
     quiz: true,           // Quiz Sonoro - Implemented
     memory: true,         // Memory Sonoro - Implemented
     missions: true,       // Misiones Diarias - Implemented
-    collections: false,   // Colecciones - TODO
+    collections: true,    // Colecciones - Implemented
     profile: true,        // Perfil & Chapas - Implemented
     challenge: false,     // 1 vs 1 - TODO
     ranking: false,       // Ranking - TODO

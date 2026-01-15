@@ -11,7 +11,8 @@
     "youtube_id": "eI5zAxTgtJw",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e9.jpg",
     "routes": ["climate_refuge"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "nature"
   },
   {
     "id": "69661cde8790a4ff532bc9ea",
@@ -25,7 +26,8 @@
     "youtube_id": "223iMpkwRsU",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9ea.jpg",
     "routes": [],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "nature"
   },
   {
     "id": "69661cde8790a4ff532bc9eb",
@@ -39,7 +41,8 @@
     "youtube_id": "6Epq1fJDXxg",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9eb.jpg",
     "routes": [],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "traffic"
   },
   {
     "id": "69661cde8790a4ff532bc9ec",
@@ -53,7 +56,8 @@
     "youtube_id": "63MDiHttUPE",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9ec.jpg",
     "routes": ["climate_refuge"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "nature"
   },
   {
     "id": "69661cde8790a4ff532bc9ed",
@@ -67,7 +71,8 @@
     "youtube_id": "ONiXUfZ3ELo",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9ed.jpg",
     "routes": ["sound_identity"],
-    "representativeness": "representativo"
+    "representativeness": "representativo",
+    "category": "people"
   },
   {
     "id": "69661cde8790a4ff532bc9ee",
@@ -81,7 +86,8 @@
     "youtube_id": "aj70u6U1YxU",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9ee.jpg",
     "routes": [],
-    "representativeness": "representativo"
+    "representativeness": "representativo",
+    "category": "traffic"
   },
   {
     "id": "69661cde8790a4ff532bc9ef",
@@ -95,7 +101,8 @@
     "youtube_id": "sVQL8gbS5po",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9ef.jpg",
     "routes": ["acoustic_friendly", "climate_refuge"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "nature"
   },
   {
     "id": "69661cde8790a4ff532bc9f0",
@@ -109,7 +116,8 @@
     "youtube_id": "Sg7BPqUf-GI",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9f0.jpg",
     "routes": ["acoustic_friendly", "climate_refuge"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "nature"
   },
   {
     "id": "69661cde8790a4ff532bc9f1",
@@ -123,7 +131,8 @@
     "youtube_id": "eI5zAxTgtJw",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9f1.jpg",
     "routes": ["acoustic_friendly", "climate_refuge"],
-    "representativeness": "representativo"
+    "representativeness": "representativo",
+    "category": "urban"
   },
   {
     "id": "69661cde8790a4ff532bc9e3",
@@ -137,7 +146,8 @@
     "youtube_id": "nqCDxamfLxs",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e3.jpg",
     "routes": ["acoustic_friendly", "sound_identity"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "urban"
   },
   {
     "id": "69661cde8790a4ff532bc9e4",
@@ -151,7 +161,8 @@
     "youtube_id": "6ypltE_JPOM",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e4.jpg",
     "routes": [],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "people"
   },
   {
     "id": "69661cde8790a4ff532bc9e5",
@@ -165,7 +176,8 @@
     "youtube_id": "YPHESGvXLV0",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e5.webp",
     "routes": ["sound_identity"],
-    "representativeness": "representativo"
+    "representativeness": "representativo",
+    "category": "people"
   },
   {
     "id": "69661cde8790a4ff532bc9e6",
@@ -179,7 +191,8 @@
     "youtube_id": "LAb_BG7WJqY",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e6.jpg",
     "routes": ["acoustic_friendly", "sound_identity"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "urban"
   },
   {
     "id": "69661cde8790a4ff532bc9e7",
@@ -193,7 +206,8 @@
     "youtube_id": "WfzpzLoCOWE",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e7.jpg",
     "routes": [],
-    "representativeness": "representativo"
+    "representativeness": "representativo",
+    "category": "traffic"
   },
   {
     "id": "69661cde8790a4ff532bc9e8",
@@ -207,6 +221,7 @@
     "youtube_id": "80xR7qd5uRA",
     "image_url": "/assets/images/soundpoints/69661cde8790a4ff532bc9e8.jpg",
     "routes": ["acoustic_friendly", "sound_identity"],
-    "representativeness": "muy_representativo"
+    "representativeness": "muy_representativo",
+    "category": "urban"
   }
 ]

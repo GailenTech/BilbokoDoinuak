@@ -10,6 +10,7 @@ import { GamesPage } from './pages/GamesPage';
 import { QuizGame } from './pages/QuizGame';
 import { MemoryGame } from './pages/MemoryGame';
 import { MissionsPage } from './pages/MissionsPage';
+import { CollectionsPage } from './pages/CollectionsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminPage } from './pages/AdminPage';
 
@@ -29,6 +30,7 @@ function App() {
             <Route path="/games/quiz" element={<QuizGame />} />
             <Route path="/games/memory" element={<MemoryGame />} />
             <Route path="/games/missions" element={<MissionsPage />} />
+            <Route path="/games/collections" element={<CollectionsPage />} />
             <Route path="/games/profile" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
