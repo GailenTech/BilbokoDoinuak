@@ -159,3 +159,61 @@ Proyecto de migración desde Base44 (plataforma no-code) a código propio para m
 - [ ] Implementar Misiones Diarias
 - [ ] Considerar persistencia ligera (localStorage para progreso de juegos)
 - [ ] Implementar sistema de XP y puntuación persistente
+
+---
+
+## 2026-01-15 (continuación) - Mejoras en rutas y menú móvil
+
+### Qué se ha hecho
+
+#### Menú hamburguesa para móvil
+- Añadido botón hamburguesa en Header.tsx (visible solo en pantallas < md)
+- Corregido problema de z-index: el menú quedaba oculto detrás del mapa (z-[1000])
+- Solución: z-[1001] para header y menú overlay
+
+#### Rutas que siguen las calles (OSRM)
+- **Problema detectado**: Las rutas eran líneas rectas entre puntos
+- **Solución**: Usar OSRM (Open Source Routing Machine) para calcular rutas reales
+- Creado script `claude_tools/calculateRoutes.cjs`:
+  - Pre-calcula rutas usando el servidor demo de OSRM
+  - Captura el orden exacto de waypoints del original de Base44
+  - Guarda la geometría en routes.json (234-266 coordenadas por ruta)
+- **Ventaja sobre Base44**: Rutas pre-calculadas vs llamadas API en tiempo real
+
+#### Segmentos de aproximación (líneas grises)
+- **Problema detectado**: Faltaban las líneas grises que conectan los marcadores con la ruta
+- OSRM "engancha" los waypoints a la carretera más cercana (road snapping)
+- Actualizado calculateRoutes.cjs para capturar los "approach segments":
+  - Línea desde coordenada original del marcador hasta punto de enganche OSRM
+  - Solo se guardan si la distancia es > 5 metros
+- Actualizado MapPage.tsx para renderizar estos segmentos en gris discontinuo
+
+### Detalles técnicos
+
+```javascript
+// Approach segments structure in routes.json
+approachSegments: [
+  {
+    from: [lat, lon], // Posición original del marcador
+    to: [lat, lon]    // Posición donde OSRM engancha a la carretera
+  }
+]
+```
+
+### Commits realizados
+- `fix(header): Add mobile hamburger menu with proper z-index`
+- `feat(map): Pre-calculated routes that follow streets using OSRM`
+- `fix(map): Use correct waypoint order for routes matching Base44 original`
+- `feat(map): Add gray approach segments connecting markers to routes`
+
+### Verificación
+- [x] Build de producción exitoso (446 KB JS, 46 KB CSS)
+- [x] Menú hamburguesa funciona en móvil
+- [x] Rutas siguen las calles correctamente
+- [x] Segmentos grises visibles conectando marcadores a rutas
+- [x] Coincide visualmente con la app original de Base44
+
+### Próximos pasos
+- [ ] Añadir filtros de emociones en el mapa
+- [ ] Implementar Misiones Diarias
+- [ ] Despliegue a Cloudflare Pages
