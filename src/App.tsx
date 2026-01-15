@@ -3,7 +3,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { PersistenceProvider } from './context/PersistenceContext';
 import { Header } from './components/Header';
 import { ProfileForm } from './components/ProfileForm';
-import { Home } from './pages/Home';
+import { HomeRouter } from './pages/HomeRouter';
 import { MapPage } from './pages/MapPage';
 import { RoutesPage } from './pages/RoutesPage';
 import { GamesPage } from './pages/GamesPage';
@@ -19,7 +19,7 @@ function App() {
         <div className="min-h-screen bg-white">
           <Header />
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomeRouter />} />
             <Route path="/profile" element={<ProfileForm />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/routes" element={<RoutesPage />} />
