@@ -207,7 +207,7 @@ export function MapPage() {
               <iframe
                 width="100%"
                 height="100%"
-                src={`https://www.youtube.com/embed/${selectedPoint.youtube_id}`}
+                src={`https://www.youtube.com/embed/${selectedPoint.youtube_id}?rel=0&modestbranding=1`}
                 title={language === 'es' ? selectedPoint.title_es : selectedPoint.title_eu}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
