@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { useLanguage } from '../context/LanguageContext';
 import { Play, X } from 'lucide-react';
@@ -51,6 +51,17 @@ export function MapPage() {
     ? soundPoints.filter(p => p.routes.includes(selectedRoute))
     : soundPoints;
 
+  // Get route color and path coordinates for polyline
+  const selectedRouteData = routesData.find(r => r.id === selectedRoute);
+  const routeColor = selectedRouteData?.color || '#1e3a5f';
+
+  // Create path coordinates from filtered points (sorted by latitude for a logical path)
+  const routePath: [number, number][] = selectedRoute
+    ? filteredPoints
+        .sort((a, b) => a.latitude - b.latitude)
+        .map(p => [p.latitude, p.longitude] as [number, number])
+    : [];
+
   const center: [number, number] = [43.278, -2.961];
 
   return (
@@ -94,6 +105,18 @@ export function MapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {/* Route path line */}
+          {selectedRoute && routePath.length > 1 && (
+            <Polyline
+              positions={routePath}
+              pathOptions={{
+                color: routeColor,
+                weight: 4,
+                opacity: 0.8,
+                dashArray: '10, 10',
+              }}
+            />
+          )}
           {filteredPoints.map((point) => (
             <Marker
               key={point.id}
