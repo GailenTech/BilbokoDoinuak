@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { useLanguage } from '../context/LanguageContext';
-import { Play, X } from 'lucide-react';
+import { Volume2, X } from 'lucide-react';
 import soundPointsData from '../data/soundPoints.json';
 import routesData from '../data/routes.json';
 import 'leaflet/dist/leaflet.css';
@@ -41,6 +41,28 @@ export function MapPage() {
   );
   const [selectedPoint, setSelectedPoint] = useState<SoundPoint | null>(null);
   const [soundPoints] = useState<SoundPoint[]>(soundPointsData as SoundPoint[]);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isAudioPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsAudioPlaying(!isAudioPlaying);
+    }
+  };
+
+  // Reset audio state when selecting a new point
+  useEffect(() => {
+    setIsAudioPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [selectedPoint]);
 
   useEffect(() => {
     const route = searchParams.get('route');
@@ -153,47 +175,60 @@ export function MapPage() {
       {/* Detail panel */}
       {selectedPoint && (
         <div className="absolute top-4 right-4 w-80 bg-white rounded-xl shadow-xl overflow-hidden z-[1000]">
-          <div className="relative">
-            <img
-              src={selectedPoint.image_url}
-              alt={language === 'es' ? selectedPoint.title_es : selectedPoint.title_eu}
-              className="w-full h-40 object-cover"
-            />
+          {/* Header with title and audio button */}
+          <div className="flex items-center justify-between p-3 border-b">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-base">
+                {language === 'es' ? selectedPoint.title_es : selectedPoint.title_eu}
+              </h3>
+              <button
+                onClick={toggleAudio}
+                className={`p-1.5 rounded-full transition-colors ${
+                  isAudioPlaying
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={language === 'es' ? 'Reproducir audio' : 'Audioa erreproduzitu'}
+              >
+                <Volume2 size={18} />
+              </button>
+            </div>
             <button
               onClick={() => setSelectedPoint(null)}
-              className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
+              className="p-1 text-gray-400 hover:text-gray-600"
             >
               <X size={20} />
             </button>
           </div>
+
+          {/* YouTube embedded video */}
+          {selectedPoint.youtube_id && (
+            <div className="aspect-video">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${selectedPoint.youtube_id}`}
+                title={language === 'es' ? selectedPoint.title_es : selectedPoint.title_eu}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
+
+          {/* Description */}
           <div className="p-4">
-            <h3 className="font-bold text-lg mb-2">
-              {language === 'es' ? selectedPoint.title_es : selectedPoint.title_eu}
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
+            <p className="text-gray-600 text-sm">
               {language === 'es' ? selectedPoint.description_es : selectedPoint.description_eu}
             </p>
-
-            {/* Audio player */}
-            <div className="mb-4">
-              <audio controls className="w-full" src={selectedPoint.audio_url}>
-                {language === 'es' ? 'Tu navegador no soporta audio.' : 'Zure nabigatzaileak ez du audioa onartzen.'}
-              </audio>
-            </div>
-
-            {/* YouTube link */}
-            {selectedPoint.youtube_id && (
-              <a
-                href={`https://www.youtube.com/watch?v=${selectedPoint.youtube_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-red-600 hover:text-red-700"
-              >
-                <Play size={16} />
-                <span className="text-sm">{language === 'es' ? 'Ver en YouTube' : 'YouTube-n ikusi'}</span>
-              </a>
-            )}
           </div>
+
+          {/* Hidden audio element for icon playback */}
+          <audio
+            ref={audioRef}
+            src={selectedPoint.audio_url}
+            onEnded={() => setIsAudioPlaying(false)}
+          />
         </div>
       )}
     </div>
