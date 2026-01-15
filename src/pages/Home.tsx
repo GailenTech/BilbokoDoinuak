@@ -16,7 +16,7 @@ export function Home() {
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-white to-blue-50">
         <div className="w-full max-w-2xl">
           {/* Card with top border accent */}
-          <div className="rounded-xl border bg-white shadow-2xl border-t-4 border-t-red-600">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-2xl border-t-4 border-t-red-600">
             {/* Card header/content */}
             <div className="flex flex-col p-6 text-center space-y-4 pb-8">
               {/* Globe icon */}

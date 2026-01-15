@@ -6,6 +6,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { Play, X } from 'lucide-react';
 import soundPointsData from '../data/soundPoints.json';
 import routesData from '../data/routes.json';
+import bilbaoLogo from '../assets/images/bilbao-ayto-logo.png';
+import doinuakLogo from '../assets/images/bilboko-doinuak-logo.jpg';
 import 'leaflet/dist/leaflet.css';
 
 interface SoundPoint {
@@ -53,7 +55,7 @@ export function MapPage() {
 
   // Get route color and path coordinates for polyline
   const selectedRouteData = routesData.find(r => r.id === selectedRoute);
-  const routeColor = selectedRouteData?.color || '#1e3a5f';
+  const routeColor = selectedRouteData?.color || '#171717';
 
   // Create path coordinates from filtered points (sorted by latitude for a logical path)
   const routePath: [number, number][] = selectedRoute
@@ -65,35 +67,69 @@ export function MapPage() {
   const center: [number, number] = [43.278, -2.961];
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
-      {/* Filters */}
-      <div className="bg-white shadow-sm p-4">
-        <div className="container mx-auto flex flex-wrap items-center gap-4">
-          <div className="flex gap-2">
+    <div className="h-[calc(100vh-64px)] flex">
+      {/* Sidebar with filters */}
+      <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col gap-4 overflow-y-auto">
+        {/* Logos */}
+        <div className="flex items-center gap-2 pb-4 border-b border-gray-200">
+          <img src={bilbaoLogo} alt="Ayuntamiento de Bilbao" className="h-8" />
+          <img src={doinuakLogo} alt="Bilboko doinuak" className="h-8" />
+        </div>
+
+        {/* Route filters */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedRoute(null)}
+            className={`inline-flex items-center justify-center gap-2 font-medium transition-colors h-8 rounded-md px-3 text-xs whitespace-nowrap shadow-sm ${
+              !selectedRoute
+                ? 'bg-gray-900 text-white hover:bg-gray-800'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {t('map.all')}
+          </button>
+          {routesData.map((route) => (
             <button
-              onClick={() => setSelectedRoute(null)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                !selectedRoute
-                  ? 'bg-[#1e3a5f] text-white'
+              key={route.id}
+              onClick={() => setSelectedRoute(route.id)}
+              className={`inline-flex items-center justify-center gap-2 font-medium transition-colors h-8 rounded-md px-3 text-xs whitespace-nowrap shadow-sm ${
+                selectedRoute === route.id
+                  ? 'text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
+              style={selectedRoute === route.id ? { backgroundColor: route.color } : {}}
             >
-              {t('map.all')}
+              {language === 'es' ? route.name_es : route.name_eu}
             </button>
-            {routesData.map((route) => (
-              <button
-                key={route.id}
-                onClick={() => setSelectedRoute(route.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedRoute === route.id
-                    ? 'text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                style={selectedRoute === route.id ? { backgroundColor: route.color } : {}}
-              >
-                {language === 'es' ? route.name_es : route.name_eu}
-              </button>
-            ))}
+          ))}
+        </div>
+
+        {/* Emotion filter legend */}
+        <div className="pt-4 border-t border-gray-200">
+          <h3 className="font-bold text-sm mb-3 text-gray-900">
+            {language === 'es' ? 'Filtrar por emoción' : 'Emozioaren arabera iragazi'}
+          </h3>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgb(34, 197, 94)' }}></div>
+              <span>{language === 'es' ? 'Me anima / Me alegra' : 'Animatzen / Pozten nau'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgb(16, 185, 129)' }}></div>
+              <span>{language === 'es' ? 'Me relaja' : 'Erlaxatzen nau'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgb(251, 191, 36)' }}></div>
+              <span>{language === 'es' ? 'Me da igual' : 'Berdin zait'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgb(251, 146, 60)' }}></div>
+              <span>{language === 'es' ? 'No me gusta / Me da miedo' : 'Ez zait gustatzen / Beldurtzen nau'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgb(239, 68, 68)' }}></div>
+              <span>{language === 'es' ? 'Me molesta' : 'Gogaitzen nau'}</span>
+            </div>
           </div>
         </div>
       </div>
