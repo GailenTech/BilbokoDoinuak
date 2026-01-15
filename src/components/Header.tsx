@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { Home, Map, Route, Gamepad2, Settings, Globe, Menu, X } from 'lucide-react';
+import { Home, Map, Route, Gamepad2, Globe, Menu, X } from 'lucide-react';
 import bilbaoLogo from '../assets/images/bilbao-ayto-logo.png';
 import doinuakLogo from '../assets/images/bilboko-doinuak-logo.jpg';
 
@@ -15,7 +15,7 @@ export function Header() {
     { path: '/map', label: t('nav.map'), icon: Map },
     { path: '/routes', label: t('nav.routes'), icon: Route },
     { path: '/games', label: t('nav.games'), icon: Gamepad2 },
-    { path: '/admin', label: t('nav.admin'), icon: Settings },
+    // Panel Municipal oculto de la navegación pública (accesible vía URL directa /admin)
   ];
 
   const isActive = (path: string) => {
