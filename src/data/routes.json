@@ -1,0 +1,29 @@
+[
+  {
+    "id": "acoustic_friendly",
+    "name_es": "Itinerario Acústicamente Amable",
+    "name_eu": "Ibilbide Akustikoki Atsegina",
+    "description_es": "Identificar y visibilizar el itinerario acústicamente amable en el barrio para promover y poner en valor el bienestar acústico y mejorar el confort ambiental de las personas.",
+    "description_eu": "Auzoko ibilbide akustikoki atsegina identifikatu eta ikusaraztea, ongizate akustikoa sustatu eta balioesteko, eta pertsonen ingurumen-erosotasuna hobetzeko.",
+    "color": "#22c55e",
+    "icon": "volume-2"
+  },
+  {
+    "id": "climate_refuge",
+    "name_es": "Ruta Refugios Climáticos",
+    "name_eu": "Klima Babeslekuen Ibilbidea",
+    "description_es": "Espacios verdes y zonas de sombra que actúan como refugios naturales ante el calor y el estrés urbano.",
+    "description_eu": "Gune berdeak eta itzal-eremuak, bero eta hiri-estresaren aurrean babesle natural gisa jarduten dutenak.",
+    "color": "#3b82f6",
+    "icon": "tree-deciduous"
+  },
+  {
+    "id": "sound_identity",
+    "name_es": "Ruta Identidad Sonora",
+    "name_eu": "Soinu Nortasunaren Ibilbidea",
+    "description_es": "Los sonidos que definen la historia y el carácter de San Inazio. Voces, máquinas y tradiciones.",
+    "description_eu": "San Inazioren historia eta izaera definitzen duten soinuak. Ahotsak, makinak eta tradizioak.",
+    "color": "#f59e0b",
+    "icon": "music"
+  }
+]
