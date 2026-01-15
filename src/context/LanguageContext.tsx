@@ -46,6 +46,13 @@ const translations: Record<string, Record<Language, string>> = {
   // General
   'listen': { es: 'Escuchar', eu: 'Entzun' },
   'close': { es: 'Cerrar', eu: 'Itxi' },
+
+  // Geolocation
+  'map.locateMe': { es: 'Localízame', eu: 'Kokatu nazazu' },
+  'map.yourLocation': { es: 'Tu ubicación', eu: 'Zure kokapena' },
+  'map.showingBilbaoCenter': { es: 'Mostrando centro de Bilbao', eu: 'Bilboko erdigunea erakusten' },
+  'map.locationError': { es: 'No se pudo obtener tu ubicación', eu: 'Ezin izan da zure kokapena lortu' },
+  'map.outsideBilbao': { es: 'Estás fuera de Bilbao', eu: 'Bilbotik kanpo zaude' },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);

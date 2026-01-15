@@ -113,3 +113,49 @@ body {
 .nav-inactive:hover {
   color: var(--color-red-600);
 }
+
+/* Toast animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* User location marker container - remove default Leaflet marker styles */
+.user-location-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Custom Leaflet popup styles for sound points */
+.sound-point-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.sound-point-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 16px;
+  width: 320px !important;
+}
+
+.sound-point-popup .leaflet-popup-tip {
+  background: white;
+}
+
+/* Ensure iframe displays properly inside popup */
+.sound-popup-content iframe {
+  border: none;
+  display: block;
+}
