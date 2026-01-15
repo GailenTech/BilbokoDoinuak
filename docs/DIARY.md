@@ -65,4 +65,43 @@ Proyecto de migración desde Base44 (plataforma no-code) a código propio para m
 - La integración GitHub de Base44 es **parcialmente bidireccional**
 - Solo el frontend se sincroniza; backend/BD permanecen en Base44
 - Para control total, necesario reconstruir (lo que estamos haciendo)
-- Los assets (imágenes, audios) siguen en servidores de Base44 por ahora
+- ~~Los assets (imágenes, audios) siguen en servidores de Base44 por ahora~~ → Descargados localmente
+
+---
+
+## 2026-01-15 (continuación) - Mejoras visuales y descarga de assets
+
+### Qué se ha hecho
+
+#### Assets descargados localmente
+- 15 imágenes de puntos sonoros (~12 MB) → `public/assets/images/soundpoints/`
+- 15 archivos de audio (~26 MB) → `public/assets/audio/`
+- Logos del Ayuntamiento y Bilboko Doinuak → `src/assets/images/`
+
+#### Polyline para itinerarios
+- Añadida línea discontinua (Polyline) que conecta los puntos de cada ruta
+- Color de la línea coincide con el color de la ruta seleccionada
+- Se muestra solo cuando hay una ruta seleccionada
+
+#### Corrección del layout del mapa
+- **Problema detectado**: El agente había inventado una barra lateral que no existía en el original
+- **Solución**: Eliminada la sidebar, filtros ahora superpuestos sobre el mapa (esquina superior izquierda)
+- El diseño ahora coincide con el original de Base44:
+  - Header con logos y navegación
+  - Mapa a ancho completo
+  - Filtros de ruta como botones overlay
+  - Panel de detalle como overlay a la derecha
+
+### Verificación visual
+- Screenshots comparativos guardados en `.playwright-mcp/screenshots/`
+- Filtros funcionando correctamente
+- Polyline visible al seleccionar ruta
+- Panel de detalle con imagen, audio y enlace YouTube: OK
+
+### Commits realizados
+- `fix(map): Remove sidebar, use overlay filters matching Base44 original`
+
+### Próximos pasos
+- [ ] Implementar juego Quiz básico
+- [ ] Implementar juego Memory básico
+- [ ] Añadir filtros de emociones en el mapa
