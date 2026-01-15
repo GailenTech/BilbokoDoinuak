@@ -1,20 +1,45 @@
 /**
  * Script to pre-calculate walking routes using OSRM
- * Run with: node claude_tools/calculateRoutes.js
+ * Run with: node claude_tools/calculateRoutes.cjs
  *
- * This will fetch real walking routes from OSRM and save them to routes.json
- * so we don't need to call the API at runtime.
+ * Uses the exact waypoint order from the original Base44 app.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 // Load data
-const soundPoints = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/data/soundPoints.json'), 'utf8'));
 const routes = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/data/routes.json'), 'utf8'));
 
 // OSRM demo server (for one-time calculation only)
 const OSRM_URL = 'https://router.project-osrm.org/route/v1/foot';
+
+// Exact waypoint orders from original Base44 app (captured from network requests)
+// Format: [longitude, latitude] pairs in walking order
+const ROUTE_WAYPOINTS = {
+  acoustic_friendly: [
+    [-2.9573016426213523, 43.27346390826821],   // Parque de Sarriko
+    [-2.9582670743105637, 43.275364375905454],  // Plaza de Ibarrekolanda
+    [-2.961511485826854, 43.27694294762451],    // Parque Astigarraga
+    [-2.9601139477879066, 43.278599154919796],  // Plaza Valle de Baztan
+    [-2.9573016426213523, 43.279956],           // Calle Antxeta
+    [-2.9623057766230305, 43.28202767008329]    // Plaza Levante
+  ],
+  climate_refuge: [
+    [-2.9573016426213523, 43.27346390826821],   // Parque de Sarriko
+    [-2.9613750324466186, 43.27446179999002],   // Jardines Sta. Maria Josefa Sancho
+    [-2.961511485826854, 43.27694294762451],    // Parque Astigarraga
+    [-2.9573016426213523, 43.279956],           // Calle Antxeta
+    [-2.965595661281431, 43.28476650392853]     // Parque de Elorrieta
+  ],
+  sound_identity: [
+    [-2.9582670743105637, 43.275364375905454],  // Plaza de Ibarrekolanda
+    [-2.956641348736805, 43.27711209685057],    // Plaza Celestino Maria del Arenal
+    [-2.962298318952517, 43.27820255747088],    // Frontón de San Inazio
+    [-2.9601139477879066, 43.278599154919796],  // Plaza Valle de Baztan
+    [-2.9623057766230305, 43.28202767008329]    // Plaza Levante
+  ]
+};
 
 async function fetchRoute(coordinates) {
   // coordinates format: [[lon, lat], [lon, lat], ...]
@@ -44,34 +69,28 @@ async function calculateRoutesForAll() {
   for (const route of routes) {
     console.log(`\nProcessing route: ${route.name_es}`);
 
-    // Get points for this route
-    const routePoints = soundPoints.filter(p => p.routes.includes(route.id));
+    const waypoints = ROUTE_WAYPOINTS[route.id];
 
-    if (routePoints.length < 2) {
-      console.log(`  Skipping - only ${routePoints.length} points`);
+    if (!waypoints || waypoints.length < 2) {
+      console.log(`  No waypoints defined for ${route.id}`);
       updatedRoutes.push({ ...route, geometry: null });
       continue;
     }
 
-    console.log(`  Found ${routePoints.length} points`);
-
-    // Sort points by some logic if needed (for now, use as-is)
-    // In a real scenario, you might want to optimize the order
-
-    // Create coordinates array [lon, lat] for OSRM
-    const coordinates = routePoints.map(p => [p.longitude, p.latitude]);
+    console.log(`  Using ${waypoints.length} waypoints in correct order`);
 
     try {
-      const geometry = await fetchRoute(coordinates);
+      const geometry = await fetchRoute(waypoints);
       console.log(`  Route calculated: ${geometry.length} coordinates`);
 
       // Convert from [lon, lat] to [lat, lon] for Leaflet
       const leafletGeometry = geometry.map(([lon, lat]) => [lat, lon]);
 
+      // Remove old geometry and pointIds, add new geometry
+      const { geometry: _oldGeo, pointIds: _oldIds, ...routeData } = route;
       updatedRoutes.push({
-        ...route,
-        geometry: leafletGeometry,
-        pointIds: routePoints.map(p => p.id)
+        ...routeData,
+        geometry: leafletGeometry
       });
     } catch (error) {
       console.error(`  Error: ${error.message}`);
