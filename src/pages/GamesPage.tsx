@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { usePersistence } from '../context/PersistenceContext';
 import { Play, Trophy, Target, LayoutGrid, User, Swords, Award, Sparkles, Lock } from 'lucide-react';
 
 const mainGames = [
@@ -94,6 +95,10 @@ const secondaryGames = [
 export function GamesPage() {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { progress, levelInfo, levelProgress, xpForNextLevel, isLoading } = usePersistence();
+
+  // Get level name in current language
+  const levelName = language === 'es' ? levelInfo.name_es : levelInfo.name_eu;
 
   return (
     <main className="min-h-[calc(100vh-64px)] bg-gray-50 py-8">
@@ -123,10 +128,12 @@ export function GamesPage() {
                 <User className="w-9 h-9 text-white" />
               </div>
               <div>
-                <h2 className="font-bold text-xl">{language === 'es' ? 'Explorador/a' : 'Esploratzailea'}</h2>
+                <h2 className="font-bold text-xl">{levelName}</h2>
                 <p className="text-white/80 text-sm flex items-center gap-1">
                   <span className="inline-block w-2 h-2 bg-green-400 rounded-full"></span>
-                  {language === 'es' ? 'Nivel 1 - Principiante' : '1. Maila - Hasiberria'}
+                  {language === 'es'
+                    ? `Nivel ${levelInfo.level} - ${levelName}`
+                    : `${levelInfo.level}. Maila - ${levelName}`}
                 </p>
               </div>
             </div>
@@ -134,15 +141,24 @@ export function GamesPage() {
           <div className="mt-4 relative z-10">
             <div className="flex justify-between text-sm mb-2">
               <span className="font-medium">{language === 'es' ? 'Progreso' : 'Aurrerapena'}</span>
-              <span className="text-white/80">0 / 100 XP</span>
+              <span className="text-white/80">
+                {isLoading ? '...' : `${progress.odisea2xp} / ${xpForNextLevel.needed} XP`}
+              </span>
             </div>
             <div className="h-3 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-green-400 to-green-300 rounded-full w-0 transition-all duration-500"></div>
+              <div
+                className="h-full bg-gradient-to-r from-green-400 to-green-300 rounded-full transition-all duration-500"
+                style={{ width: `${levelProgress}%` }}
+              ></div>
             </div>
             <p className="text-xs text-white/60 mt-2">
-              {language === 'es'
-                ? 'Juega para ganar XP y desbloquear chapas'
-                : 'Jokatu XP irabazteko eta txapak desblokeatzeko'}
+              {progress.badges.length > 0
+                ? (language === 'es'
+                    ? `${progress.badges.length} chapa${progress.badges.length > 1 ? 's' : ''} desbloqueada${progress.badges.length > 1 ? 's' : ''}`
+                    : `${progress.badges.length} txapa desblokeatuta`)
+                : (language === 'es'
+                    ? 'Juega para ganar XP y desbloquear chapas'
+                    : 'Jokatu XP irabazteko eta txapak desblokeatzeko')}
             </p>
           </div>
         </div>

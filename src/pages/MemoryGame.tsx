@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { Volume2, RotateCcw } from 'lucide-react';
+import { usePersistence } from '../context/PersistenceContext';
+import { Volume2, RotateCcw, Star } from 'lucide-react';
 import soundPointsData from '../data/soundPoints.json';
 
 interface SoundPoint {
@@ -62,6 +63,7 @@ export function MemoryGame() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { addXP, recordGame, unlockBadge } = usePersistence();
 
   const [cards, setCards] = useState<Card[]>([]);
   const [flippedCards, setFlippedCards] = useState<string[]>([]);
@@ -70,8 +72,13 @@ export function MemoryGame() {
   const [gameOver, setGameOver] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [xpEarned, setXpEarned] = useState(0);
+  const [resultSaved, setResultSaved] = useState(false);
 
   const PAIR_COUNT = 6;
+  const XP_BASE = 50;
+  const XP_BONUS_PER_MOVE_UNDER_12 = 5;
+  const FAST_MEMORY_THRESHOLD = 12;
 
   useEffect(() => {
     const points = soundPointsData as SoundPoint[];
@@ -167,8 +174,46 @@ export function MemoryGame() {
     setMoves(0);
     setMatches(0);
     setGameOver(false);
+    setXpEarned(0);
+    setResultSaved(false);
     stopAudio();
   };
+
+  // Save game results when game ends
+  const saveGameResults = useCallback(async (finalMoves: number) => {
+    if (resultSaved) return;
+
+    // Calculate XP: base + bonus for fewer moves
+    // Perfect game (6 moves minimum for 6 pairs) gets maximum bonus
+    const bonusMoves = Math.max(0, FAST_MEMORY_THRESHOLD - finalMoves);
+    const earnedXP = XP_BASE + (bonusMoves * XP_BONUS_PER_MOVE_UNDER_12);
+    setXpEarned(earnedXP);
+
+    // Record the game
+    await recordGame({
+      gameType: 'memory',
+      score: PAIR_COUNT,
+      maxScore: PAIR_COUNT,
+      moves: finalMoves,
+    });
+
+    // Add XP
+    await addXP(earnedXP);
+
+    // Check for fast memory badge (completed in 12 moves or less)
+    if (finalMoves <= FAST_MEMORY_THRESHOLD) {
+      await unlockBadge('fast_memory');
+    }
+
+    setResultSaved(true);
+  }, [resultSaved, recordGame, addXP, unlockBadge]);
+
+  // Save results when game ends
+  useEffect(() => {
+    if (gameOver && !resultSaved) {
+      saveGameResults(moves);
+    }
+  }, [gameOver, moves, resultSaved, saveGameResults]);
 
   if (cards.length === 0) {
     return (
@@ -179,6 +224,7 @@ export function MemoryGame() {
   }
 
   if (gameOver) {
+    const isFastMemory = moves <= FAST_MEMORY_THRESHOLD;
     return (
       <div className="min-h-[calc(100vh-64px)] bg-gray-50 py-8">
         <div className="container mx-auto px-4 max-w-lg">
@@ -187,14 +233,30 @@ export function MemoryGame() {
             <h2 className="text-2xl font-bold mb-2">
               {language === 'es' ? '¡Felicidades!' : 'Zorionak!'}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               {language === 'es'
                 ? `Has completado el juego en ${moves} movimientos`
                 : `Jokoa ${moves} mugimendu(etan) osatu duzu`}
             </p>
-            <div className="text-3xl font-bold text-gray-900 mb-6">
+            <div className="text-3xl font-bold text-gray-900 mb-4">
               {moves} {language === 'es' ? 'MOVIMIENTOS' : 'MUGIMENDU'}
             </div>
+
+            {/* XP earned */}
+            {xpEarned > 0 && (
+              <div className="bg-purple-50 rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-center gap-2 text-purple-700">
+                  <Star className="w-5 h-5" />
+                  <span className="font-bold text-lg">+{xpEarned} XP</span>
+                </div>
+                {isFastMemory && (
+                  <p className="text-purple-600 text-sm mt-1">
+                    {language === 'es' ? 'Memoria rapida!' : 'Memoria azkarra!'}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={() => navigate('/games')}

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
+import { PersistenceProvider } from './context/PersistenceContext';
 import { Header } from './components/Header';
 import { Home } from './pages/Home';
 import { MapPage } from './pages/MapPage';
@@ -12,6 +13,7 @@ import { AdminPage } from './pages/AdminPage';
 function App() {
   return (
     <LanguageProvider>
+      <PersistenceProvider>
       <BrowserRouter>
         <div className="min-h-screen bg-white">
           <Header />
@@ -26,6 +28,7 @@ function App() {
           </Routes>
         </div>
       </BrowserRouter>
+      </PersistenceProvider>
     </LanguageProvider>
   );
 }

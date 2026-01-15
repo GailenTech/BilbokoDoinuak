@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { X, Volume2, CheckCircle, XCircle, Trophy, RotateCcw, Flame, ArrowLeft } from 'lucide-react';
+import { usePersistence } from '../context/PersistenceContext';
+import { X, Volume2, CheckCircle, XCircle, Trophy, RotateCcw, Flame, ArrowLeft, Star } from 'lucide-react';
 import soundPointsData from '../data/soundPoints.json';
 
 interface SoundPoint {
@@ -47,6 +48,7 @@ export function QuizGame() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { addXP, recordGame, unlockBadge } = usePersistence();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -55,8 +57,11 @@ export function QuizGame() {
   const [showResult, setShowResult] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [xpEarned, setXpEarned] = useState(0);
+  const [resultSaved, setResultSaved] = useState(false);
 
   const TOTAL_QUESTIONS = 5;
+  const XP_PER_CORRECT = 20;
 
   useEffect(() => {
     const points = soundPointsData as SoundPoint[];
@@ -100,6 +105,40 @@ export function QuizGame() {
     }
   };
 
+  // Save game results when game ends
+  const saveGameResults = useCallback(async (finalScore: number) => {
+    if (resultSaved) return;
+
+    const earnedXP = finalScore * XP_PER_CORRECT;
+    setXpEarned(earnedXP);
+
+    // Record the game
+    await recordGame({
+      gameType: 'quiz',
+      score: finalScore,
+      maxScore: TOTAL_QUESTIONS,
+    });
+
+    // Add XP
+    if (earnedXP > 0) {
+      await addXP(earnedXP);
+    }
+
+    // Check for perfect quiz badge
+    if (finalScore === TOTAL_QUESTIONS) {
+      await unlockBadge('perfect_quiz');
+    }
+
+    setResultSaved(true);
+  }, [resultSaved, recordGame, addXP, unlockBadge]);
+
+  // Save results when game ends
+  useEffect(() => {
+    if (gameOver && !resultSaved) {
+      saveGameResults(score);
+    }
+  }, [gameOver, score, resultSaved, saveGameResults]);
+
   const restartGame = () => {
     const points = soundPointsData as SoundPoint[];
     setQuestions(generateQuestions(points, TOTAL_QUESTIONS));
@@ -108,6 +147,8 @@ export function QuizGame() {
     setSelectedAnswer(null);
     setShowResult(false);
     setGameOver(false);
+    setXpEarned(0);
+    setResultSaved(false);
   };
 
   const getOptionStyle = (optionId: string) => {
@@ -133,6 +174,7 @@ export function QuizGame() {
 
   if (gameOver) {
     const percentage = Math.round((score / TOTAL_QUESTIONS) * 100);
+    const isPerfect = score === TOTAL_QUESTIONS;
     return (
       <div className="min-h-[calc(100vh-64px)] bg-gray-50 py-8">
         <div className="container mx-auto px-4 max-w-lg">
@@ -143,14 +185,30 @@ export function QuizGame() {
             <h2 className="text-2xl font-bold mb-2">
               {language === 'es' ? '!Juego completado!' : 'Jokoa amaituta!'}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               {language === 'es'
                 ? `Has acertado ${score} de ${TOTAL_QUESTIONS} preguntas`
                 : `${TOTAL_QUESTIONS} galderatik ${score} asmatu dituzu`}
             </p>
-            <div className="text-5xl font-bold text-green-500 mb-6">
+            <div className="text-5xl font-bold text-green-500 mb-4">
               {percentage}%
             </div>
+
+            {/* XP earned */}
+            {xpEarned > 0 && (
+              <div className="bg-purple-50 rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-center gap-2 text-purple-700">
+                  <Star className="w-5 h-5" />
+                  <span className="font-bold text-lg">+{xpEarned} XP</span>
+                </div>
+                {isPerfect && (
+                  <p className="text-purple-600 text-sm mt-1">
+                    {language === 'es' ? 'Quiz perfecto!' : 'Quiz perfektua!'}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={() => navigate('/games')}
