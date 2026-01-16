@@ -16,6 +16,7 @@ import { MissionsPage } from './pages/MissionsPage';
 import { CollectionsPage } from './pages/CollectionsPage';
 import { AdminPage } from './pages/AdminPage';
 import { LoginPage } from './pages/LoginPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 function App() {
   return (
@@ -70,6 +71,11 @@ function App() {
             <Route path="/games/collections" element={
               <ProtectedRoute>
                 <CollectionsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/games/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

@@ -60,7 +60,7 @@ const secondaryGames = [
   },
   {
     id: 'profile',
-    path: '/profile',
+    path: '/games/profile',
     name_es: 'Perfil & Chapas',
     name_eu: 'Profila eta Txapak',
     description_es: 'Tus logros',
