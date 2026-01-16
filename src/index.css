@@ -138,15 +138,14 @@ body {
 
 /* Custom Leaflet popup styles for sound points */
 .sound-point-popup .leaflet-popup-content-wrapper {
-  padding: 0;
+  padding: 16px;
   border-radius: 12px;
-  overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 .sound-point-popup .leaflet-popup-content {
   margin: 0;
-  padding: 16px;
+  padding: 0;
   width: 320px !important;
 }
 
@@ -158,4 +157,21 @@ body {
 .sound-popup-content iframe {
   border: none;
   display: block;
+  border-radius: 8px;
+}
+
+/* Audio button styling */
+.sound-popup-content .audio-btn {
+  padding: 8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sound-popup-content .audio-btn:hover {
+  border-color: currentColor;
 }

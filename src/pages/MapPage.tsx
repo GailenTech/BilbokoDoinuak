@@ -343,20 +343,14 @@ export function MapPage() {
                         e.stopPropagation();
                         toggleAudio();
                       }}
+                      className="audio-btn"
                       style={{
-                        padding: '6px',
-                        borderRadius: '50%',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         backgroundColor: isAudioPlaying ? '#dcfce7' : '#f3f4f6',
                         color: isAudioPlaying ? '#16a34a' : '#4b5563',
                       }}
                       title={language === 'es' ? 'Reproducir audio' : 'Audioa erreproduzitu'}
                     >
-                      <Volume2 size={18} />
+                      <Volume2 size={20} />
                     </button>
                   )}
                 </div>
