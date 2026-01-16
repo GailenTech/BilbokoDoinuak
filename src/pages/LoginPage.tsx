@@ -30,7 +30,7 @@ export function LoginPage() {
   const t = {
     title: language === 'es' ? 'BILBOKO DOINUAK' : 'BILBOKO DOINUAK',
     subtitle: language === 'es'
-      ? 'Inicia sesion para acceder a la mesa de sonidos de San Inazio'
+      ? 'Inicia sesión para acceder a la mesa de sonidos de San Inazio'
       : 'Hasi saioa San Inazioko soinu-mahaiara sartzeko',
     loginTab: language === 'es' ? 'Iniciar sesión' : 'Hasi saioa',
     registerTab: language === 'es' ? 'Registrarse' : 'Erregistratu',
