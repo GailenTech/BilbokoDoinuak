@@ -1,20 +1,39 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { usePersistence } from '../context/PersistenceContext';
 import { Globe } from 'lucide-react';
 
 export function Home() {
   const { setLanguage } = useLanguage();
+  const { isAuthenticated, isSupabaseEnabled } = useAuth();
   const { isProfileComplete, isLoading } = usePersistence();
   const navigate = useNavigate();
 
   const selectLanguage = (lang: 'es' | 'eu') => {
     setLanguage(lang);
-    // If profile is not complete, go to profile form; otherwise go to map
+
+    // If Supabase is not enabled (dev mode), skip auth and go to profile/home
+    if (!isSupabaseEnabled) {
+      if (!isLoading && !isProfileComplete) {
+        navigate('/profile');
+      } else {
+        navigate('/home');
+      }
+      return;
+    }
+
+    // If not authenticated, go to login page (which will redirect to /home after login)
+    if (!isAuthenticated) {
+      navigate('/home'); // ProtectedRoute will show login
+      return;
+    }
+
+    // If authenticated but profile not complete, go to profile form
     if (!isLoading && !isProfileComplete) {
       navigate('/profile');
     } else {
-      navigate('/map');
+      navigate('/home');
     }
   };
 

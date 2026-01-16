@@ -11,8 +11,17 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isSupabaseEnabled: boolean;
 
-  // Auth actions
+  // OAuth actions
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
+
+  // Email/Password actions
+  signUpWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null; needsConfirmation: boolean }>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+
+  // Magic Link action
+  signInWithMagicLink: (email: string) => Promise<{ error: AuthError | null }>;
+
+  // Sign out
   signOut: () => Promise<{ error: AuthError | null }>;
 }
 
@@ -75,6 +84,71 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  // Sign up with email and password
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: { message: 'Supabase is not configured' } as AuthError, needsConfirmation: false };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      // Check if email confirmation is required
+      const needsConfirmation = !error && !!data.user && !data.session;
+
+      return { error, needsConfirmation };
+    } catch (err) {
+      console.error('[AuthContext] Sign up error:', err);
+      return { error: err as AuthError, needsConfirmation: false };
+    }
+  }, []);
+
+  // Sign in with email and password
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: { message: 'Supabase is not configured' } as AuthError };
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      return { error };
+    } catch (err) {
+      console.error('[AuthContext] Sign in error:', err);
+      return { error: err as AuthError };
+    }
+  }, []);
+
+  // Sign in with Magic Link
+  const signInWithMagicLink = useCallback(async (email: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: { message: 'Supabase is not configured' } as AuthError };
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      return { error };
+    } catch (err) {
+      console.error('[AuthContext] Magic link error:', err);
+      return { error: err as AuthError };
+    }
+  }, []);
+
   // Sign out
   const signOut = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -97,8 +171,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: user !== null,
     isSupabaseEnabled: isSupabaseConfigured,
     signInWithGoogle,
+    signUpWithEmail,
+    signInWithEmail,
+    signInWithMagicLink,
     signOut,
-  }), [user, session, isLoading, signInWithGoogle, signOut]);
+  }), [user, session, isLoading, signInWithGoogle, signUpWithEmail, signInWithEmail, signInWithMagicLink, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

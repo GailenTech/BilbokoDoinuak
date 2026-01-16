@@ -3,8 +3,10 @@ import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { PersistenceProvider } from './context/PersistenceContext';
 import { Header } from './components/Header';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { ProfileForm } from './components/ProfileForm';
-import { HomeRouter } from './pages/HomeRouter';
+import { Home } from './pages/Home';
+import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
 import { RoutesPage } from './pages/RoutesPage';
 import { GamesPage } from './pages/GamesPage';
@@ -23,16 +25,60 @@ function App() {
         <div className="min-h-screen bg-white">
           <Header />
           <Routes>
-            <Route path="/" element={<HomeRouter />} />
-            <Route path="/profile" element={<ProfileForm />} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/routes" element={<RoutesPage />} />
-            <Route path="/games" element={<GamesPage />} />
-            <Route path="/games/quiz" element={<QuizGame />} />
-            <Route path="/games/memory" element={<MemoryGame />} />
-            <Route path="/games/missions" element={<MissionsPage />} />
-            <Route path="/games/collections" element={<CollectionsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            {/* Public route - Home/Welcome page */}
+            <Route path="/" element={<Home />} />
+
+            {/* Protected routes - require authentication */}
+            <Route path="/home" element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfileForm />
+              </ProtectedRoute>
+            } />
+            <Route path="/map" element={
+              <ProtectedRoute>
+                <MapPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/routes" element={
+              <ProtectedRoute>
+                <RoutesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/games" element={
+              <ProtectedRoute>
+                <GamesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/games/quiz" element={
+              <ProtectedRoute>
+                <QuizGame />
+              </ProtectedRoute>
+            } />
+            <Route path="/games/memory" element={
+              <ProtectedRoute>
+                <MemoryGame />
+              </ProtectedRoute>
+            } />
+            <Route path="/games/missions" element={
+              <ProtectedRoute>
+                <MissionsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/games/collections" element={
+              <ProtectedRoute>
+                <CollectionsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </BrowserRouter>

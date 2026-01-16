@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { Home, Map, Route, Gamepad2, Globe, Menu, X } from 'lucide-react';
 import bilbaoLogo from '../assets/images/bilbao-ayto-logo.png';
 import doinuakLogo from '../assets/images/bilboko-doinuak-logo.jpg';
+import { AuthButton } from './AuthButton';
 
 export function Header() {
   const { language, setLanguage, t } = useLanguage();
@@ -11,7 +12,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { path: '/', label: t('nav.home'), icon: Home },
+    { path: '/home', label: t('nav.home'), icon: Home },
     { path: '/map', label: t('nav.map'), icon: Map },
     { path: '/routes', label: t('nav.routes'), icon: Route },
     { path: '/games', label: t('nav.games'), icon: Gamepad2 },
@@ -19,7 +20,7 @@ export function Header() {
   ];
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/home') return location.pathname === '/home' || location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
@@ -58,8 +59,13 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Language toggle + Hamburger menu */}
+        {/* Auth + Language toggle + Hamburger menu */}
         <div className="flex items-center gap-2">
+          {/* Auth Button - hidden on mobile, shown in mobile menu */}
+          <div className="hidden md:block">
+            <AuthButton variant="compact" />
+          </div>
+
           <button
             onClick={() => setLanguage(language === 'es' ? 'eu' : 'es')}
             className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white border border-gray-300 shadow-sm hover:bg-gray-50 transition-colors text-gray-900"

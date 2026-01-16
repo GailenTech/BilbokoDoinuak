@@ -58,7 +58,7 @@ export function ProfileForm() {
         gender: gender as Gender,
         barrio: barrio as Barrio,
       });
-      navigate('/map');
+      navigate('/home');
     } catch (error) {
       console.error('Failed to save profile:', error);
     } finally {
