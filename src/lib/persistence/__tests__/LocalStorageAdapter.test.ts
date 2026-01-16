@@ -78,7 +78,7 @@ describe('LocalStorageAdapter', () => {
       const testProgress: GameProgress = {
         odisea2xp: 150,
         level: 2,
-        coins: 0,
+        coins: 50,
         badges: [{ id: 'first_quiz', unlockedAt: '2024-01-15T10:00:00Z' }],
         gamesPlayed: [
           {
@@ -88,7 +88,7 @@ describe('LocalStorageAdapter', () => {
             playedAt: '2024-01-15T10:00:00Z',
           },
         ],
-        unlockedSounds: [],
+        unlockedSounds: ['sound_1', 'sound_2'],
       };
 
       await adapter.saveProgress(testProgress);

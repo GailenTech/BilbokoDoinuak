@@ -104,6 +104,7 @@ export const BADGE_DEFINITIONS: Record<BadgeId, {
   description_eu: string;
   icon: string;
 }> = {
+  // Original badges
   first_quiz: {
     name_es: 'Primer Quiz',
     name_eu: 'Lehen Quiz-a',
@@ -128,8 +129,8 @@ export const BADGE_DEFINITIONS: Record<BadgeId, {
   fast_memory: {
     name_es: 'Memory Veloz',
     name_eu: 'Memory Azkarra',
-    description_es: 'Completa Memory en menos de 20 movimientos',
-    description_eu: 'Osatu Memory 20 mugimendu baino gutxiagoan',
+    description_es: 'Completa Memory en menos de 12 movimientos',
+    description_eu: 'Osatu Memory 12 mugimendu baino gutxiagoan',
     icon: '⚡',
   },
   level_2: {
@@ -137,21 +138,50 @@ export const BADGE_DEFINITIONS: Record<BadgeId, {
     name_eu: 'Esploratzailea',
     description_es: 'Alcanza el Nivel 2',
     description_eu: 'Iritsi 2. mailara',
-    icon: '🗺️',
+    icon: '🥉',
   },
   level_3: {
-    name_es: 'Músico/a',
+    name_es: 'Musico/a',
     name_eu: 'Musikaria',
     description_es: 'Alcanza el Nivel 3',
     description_eu: 'Iritsi 3. mailara',
-    icon: '🎵',
+    icon: '🥈',
   },
   level_4: {
     name_es: 'Maestro/a',
     name_eu: 'Maisua',
     description_es: 'Alcanza el Nivel 4',
     description_eu: 'Iritsi 4. mailara',
-    icon: '👑',
+    icon: '🥇',
+  },
+  // New badges from Base44
+  novato: {
+    name_es: 'Novato',
+    name_eu: 'Hasiberria',
+    description_es: 'Juega tu primera partida',
+    description_eu: 'Jokatu zure lehen partida',
+    icon: '🌱',
+  },
+  oido_fino: {
+    name_es: 'Oido Fino',
+    name_eu: 'Belarri Fina',
+    description_es: 'Consigue 1000 puntos en una partida',
+    description_eu: 'Lortu 1000 puntu partida batean',
+    icon: '👂',
+  },
+  racha_5: {
+    name_es: 'Racha 5',
+    name_eu: '5eko Raxa',
+    description_es: 'Consigue una racha de 5 respuestas correctas',
+    description_eu: 'Lortu 5 erantzun zuzeneko segida',
+    icon: '🔥',
+  },
+  veterano: {
+    name_es: 'Veterano',
+    name_eu: 'Beteranoa',
+    description_es: 'Juega 50 partidas',
+    description_eu: 'Jokatu 50 partida',
+    icon: '🎖️',
   },
   novato: {
     name_es: 'Novato',
