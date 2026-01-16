@@ -16,6 +16,7 @@ import { CollectionsPage } from './pages/CollectionsPage';
 import { AdminPage } from './pages/AdminPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { StatsPage } from './pages/StatsPage';
 
 function App() {
   return (
@@ -80,6 +81,12 @@ function App() {
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminPage />
+              </ProtectedRoute>
+            } />
+            {/* Stats route - hidden from menu, requires auth */}
+            <Route path="/stats" element={
+              <ProtectedRoute>
+                <StatsPage />
               </ProtectedRoute>
             } />
           </Routes>
