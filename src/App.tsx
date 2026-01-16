@@ -15,6 +15,7 @@ import { MemoryGame } from './pages/MemoryGame';
 import { MissionsPage } from './pages/MissionsPage';
 import { CollectionsPage } from './pages/CollectionsPage';
 import { AdminPage } from './pages/AdminPage';
+import { LoginPage } from './pages/LoginPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
 
             {/* Protected routes - require authentication */}
             <Route path="/profile" element={

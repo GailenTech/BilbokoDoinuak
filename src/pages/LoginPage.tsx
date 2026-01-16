@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2, Mail, Lock, Wand2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,8 +9,16 @@ import doinuakLogo from '../assets/images/bilboko-doinuak-logo.jpg';
 type AuthMode = 'login' | 'register' | 'magic-link';
 
 export function LoginPage() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithMagicLink } = useAuth();
+  const navigate = useNavigate();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithMagicLink, isAuthenticated, isLoading: authLoading } = useAuth();
   const { language } = useLanguage();
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/home', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
