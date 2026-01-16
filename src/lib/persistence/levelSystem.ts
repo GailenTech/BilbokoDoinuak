@@ -183,32 +183,4 @@ export const BADGE_DEFINITIONS: Record<BadgeId, {
     description_eu: 'Jokatu 50 partida',
     icon: '🎖️',
   },
-  novato: {
-    name_es: 'Novato',
-    name_eu: 'Hasiberria',
-    description_es: 'Completa tu primera partida',
-    description_eu: 'Osatu zure lehen partida',
-    icon: '🌱',
-  },
-  oido_fino: {
-    name_es: 'Oido Fino',
-    name_eu: 'Belarri Zorrotza',
-    description_es: 'Identifica 10 sonidos correctamente',
-    description_eu: 'Identifikatu 10 soinu zuzen',
-    icon: '👂',
-  },
-  racha_5: {
-    name_es: 'Racha de 5',
-    name_eu: '5eko Raxa',
-    description_es: 'Consigue 5 aciertos seguidos',
-    description_eu: 'Lortu 5 asmatze jarraian',
-    icon: '🔥',
-  },
-  veterano: {
-    name_es: 'Veterano',
-    name_eu: 'Beteranoa',
-    description_es: 'Juega durante 7 dias',
-    description_eu: 'Jokatu 7 egunez',
-    icon: '🏆',
-  },
 };
