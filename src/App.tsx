@@ -25,15 +25,11 @@ function App() {
         <div className="min-h-screen bg-white">
           <Header />
           <Routes>
-            {/* Public route - Home/Welcome page */}
+            {/* Public routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/home" element={<HomePage />} />
 
             {/* Protected routes - require authentication */}
-            <Route path="/home" element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            } />
             <Route path="/profile" element={
               <ProtectedRoute>
                 <ProfileForm />
