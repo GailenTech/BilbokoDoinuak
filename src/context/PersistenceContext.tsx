@@ -8,6 +8,7 @@ interface ProfileFormData {
   ageRange: AgeRange;
   gender: Gender;
   barrio: Barrio;
+  barrioOtro?: string;
 }
 
 interface PersistenceContextValue {
@@ -160,6 +161,7 @@ export function PersistenceProvider({ children, adapter }: PersistenceProviderPr
       ageRange: data.ageRange,
       gender: data.gender,
       barrio: data.barrio,
+      barrioOtro: data.barrioOtro,
       profileCompleted: true,
       createdAt: profile?.createdAt ?? now,
       lastLoginAt: now,

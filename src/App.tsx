@@ -5,7 +5,6 @@ import { PersistenceProvider } from './context/PersistenceContext';
 import { Header } from './components/Header';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ProfileForm } from './components/ProfileForm';
-import { Home } from './pages/Home';
 import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
 import { RoutesPage } from './pages/RoutesPage';
@@ -28,7 +27,7 @@ function App() {
           <Header />
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
 

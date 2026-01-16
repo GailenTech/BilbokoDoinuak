@@ -17,23 +17,14 @@ const GENDER_OPTIONS: { value: Gender; label_es: string; label_eu: string }[] = 
   { value: 'female', label_es: 'Mujer', label_eu: 'Emakumea' },
   { value: 'male', label_es: 'Hombre', label_eu: 'Gizona' },
   { value: 'non_binary', label_es: 'No binario', label_eu: 'Ez binarioa' },
-  { value: 'prefer_not_say', label_es: 'Prefiero no decirlo', label_eu: 'Nahiago dut ez esan' },
 ];
 
-const BARRIO_OPTIONS: { value: Barrio; label: string }[] = [
-  { value: 'san_ignacio', label: 'San Ignacio' },
-  { value: 'abando', label: 'Abando' },
-  { value: 'basurto', label: 'Basurto' },
-  { value: 'begona', label: 'Begona' },
-  { value: 'deusto', label: 'Deusto' },
-  { value: 'errekaldeberri', label: 'Errekaldeberri' },
-  { value: 'indautxu', label: 'Indautxu' },
-  { value: 'iralabarri', label: 'Iralabarri' },
-  { value: 'otxarkoaga', label: 'Otxarkoaga' },
-  { value: 'rekalde', label: 'Rekalde' },
-  { value: 'santutxu', label: 'Santutxu' },
-  { value: 'txurdinaga', label: 'Txurdinaga' },
-  { value: 'otro', label: 'Otro / Beste bat' },
+const BARRIO_OPTIONS: { value: Barrio; label_es: string; label_eu: string; needsSpecify?: boolean }[] = [
+  { value: 'san_ignacio', label_es: 'San Ignacio', label_eu: 'San Ignazio' },
+  { value: 'ibarrekolanda', label_es: 'Ibarrekolanda', label_eu: 'Ibarrekolanda' },
+  { value: 'elegorrieta', label_es: 'Elegorrieta', label_eu: 'Elegorrieta' },
+  { value: 'otro_bilbao', label_es: 'Otro barrio de Bilbao', label_eu: 'Bilboko beste auzo bat', needsSpecify: true },
+  { value: 'otro_municipio', label_es: 'Otro municipio', label_eu: 'Beste udalerri bat', needsSpecify: true },
 ];
 
 export function ProfileForm() {
@@ -44,9 +35,17 @@ export function ProfileForm() {
   const [ageRange, setAgeRange] = useState<AgeRange | ''>('');
   const [gender, setGender] = useState<Gender | ''>('');
   const [barrio, setBarrio] = useState<Barrio | ''>('');
+  const [barrioOtro, setBarrioOtro] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isFormComplete = ageRange !== '' && gender !== '' && barrio !== '';
+  const selectedBarrioOption = BARRIO_OPTIONS.find(opt => opt.value === barrio);
+  const needsBarrioSpecify = selectedBarrioOption?.needsSpecify ?? false;
+
+  const isFormComplete =
+    ageRange !== '' &&
+    gender !== '' &&
+    barrio !== '' &&
+    (!needsBarrioSpecify || barrioOtro.trim() !== '');
 
   const handleSubmit = async () => {
     if (!isFormComplete) return;
@@ -57,12 +56,21 @@ export function ProfileForm() {
         ageRange: ageRange as AgeRange,
         gender: gender as Gender,
         barrio: barrio as Barrio,
+        barrioOtro: needsBarrioSpecify ? barrioOtro.trim() : undefined,
       });
-      navigate('/home');
+      navigate('/map');
     } catch (error) {
       console.error('Failed to save profile:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleBarrioChange = (value: Barrio | '') => {
+    setBarrio(value);
+    // Clear barrioOtro when changing to a non-specify option
+    if (!BARRIO_OPTIONS.find(opt => opt.value === value)?.needsSpecify) {
+      setBarrioOtro('');
     }
   };
 
@@ -138,7 +146,7 @@ export function ProfileForm() {
               </label>
               <select
                 value={barrio}
-                onChange={(e) => setBarrio(e.target.value as Barrio | '')}
+                onChange={(e) => handleBarrioChange(e.target.value as Barrio | '')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
               >
                 <option value="">
@@ -146,11 +154,30 @@ export function ProfileForm() {
                 </option>
                 {BARRIO_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {language === 'es' ? opt.label_es : opt.label_eu}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Conditional text field for "otro" options */}
+            {needsBarrioSpecify && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {language === 'es' ? '¿Cuál?' : 'Zein?'}
+                </label>
+                <input
+                  type="text"
+                  value={barrioOtro}
+                  onChange={(e) => setBarrioOtro(e.target.value)}
+                  placeholder={language === 'es'
+                    ? (barrio === 'otro_bilbao' ? 'Nombre del barrio' : 'Nombre del municipio')
+                    : (barrio === 'otro_bilbao' ? 'Auzoaren izena' : 'Udalerriaren izena')
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+              </div>
+            )}
 
             {/* Submit button */}
             <button

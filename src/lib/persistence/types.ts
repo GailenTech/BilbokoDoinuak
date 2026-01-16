@@ -6,25 +6,17 @@ export type AgeRange = 'under_18' | '18_30' | '31_50' | '51_65' | 'over_65';
 /**
  * Gender options
  */
-export type Gender = 'female' | 'male' | 'non_binary' | 'prefer_not_say';
+export type Gender = 'female' | 'male' | 'non_binary';
 
 /**
  * Bilbao neighborhood options
  */
 export type Barrio =
   | 'san_ignacio'
-  | 'abando'
-  | 'basurto'
-  | 'begona'
-  | 'deusto'
-  | 'errekaldeberri'
-  | 'indautxu'
-  | 'iralabarri'
-  | 'otxarkoaga'
-  | 'rekalde'
-  | 'santutxu'
-  | 'txurdinaga'
-  | 'otro';
+  | 'ibarrekolanda'
+  | 'elegorrieta'
+  | 'otro_bilbao'
+  | 'otro_municipio';
 
 /**
  * User profile information
@@ -36,6 +28,7 @@ export interface UserProfile {
   ageRange?: AgeRange;
   gender?: Gender;
   barrio?: Barrio;
+  barrioOtro?: string; // For "otro_bilbao" or "otro_municipio" - stores the specific name
   profileCompleted: boolean;
   createdAt: string;
   lastLoginAt: string;

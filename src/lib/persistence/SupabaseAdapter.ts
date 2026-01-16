@@ -21,6 +21,7 @@ interface DbProfile {
   age_range: string | null;
   gender: string | null;
   barrio: string | null;
+  barrio_otro: string | null;
   profile_completed: boolean;
   created_at: string;
   last_login_at: string;
@@ -49,6 +50,7 @@ function dbProfileToUserProfile(db: DbProfile): UserProfile {
     ageRange: db.age_range as UserProfile['ageRange'],
     gender: db.gender as UserProfile['gender'],
     barrio: db.barrio as UserProfile['barrio'],
+    barrioOtro: db.barrio_otro ?? undefined,
     profileCompleted: db.profile_completed,
     createdAt: db.created_at,
     lastLoginAt: db.last_login_at,
@@ -66,6 +68,7 @@ function userProfileToDb(profile: UserProfile): Omit<DbProfile, 'created_at'> {
     age_range: profile.ageRange ?? null,
     gender: profile.gender ?? null,
     barrio: profile.barrio ?? null,
+    barrio_otro: profile.barrioOtro ?? null,
     profile_completed: profile.profileCompleted,
     last_login_at: profile.lastLoginAt,
   };

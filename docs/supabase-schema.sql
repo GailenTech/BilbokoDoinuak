@@ -11,12 +11,11 @@ CREATE TABLE IF NOT EXISTS profiles (
   display_name TEXT NOT NULL DEFAULT '',
   avatar_url TEXT,
   age_range TEXT CHECK (age_range IN ('under_18', '18_30', '31_50', '51_65', 'over_65')),
-  gender TEXT CHECK (gender IN ('female', 'male', 'non_binary', 'prefer_not_say')),
+  gender TEXT CHECK (gender IN ('female', 'male', 'non_binary')),
   barrio TEXT CHECK (barrio IN (
-    'san_ignacio', 'abando', 'basurto', 'begona', 'deusto',
-    'errekaldeberri', 'indautxu', 'iralabarri', 'otxarkoaga',
-    'rekalde', 'santutxu', 'txurdinaga', 'otro'
+    'san_ignacio', 'ibarrekolanda', 'elegorrieta', 'otro_bilbao', 'otro_municipio'
   )),
+  barrio_otro TEXT, -- For specifying "which neighborhood/municipality" when otro_bilbao or otro_municipio is selected
   profile_completed BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_login_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
