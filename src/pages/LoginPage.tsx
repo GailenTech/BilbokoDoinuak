@@ -32,27 +32,27 @@ export function LoginPage() {
     subtitle: language === 'es'
       ? 'Inicia sesion para acceder a la mesa de sonidos de San Inazio'
       : 'Hasi saioa San Inazioko soinu-mahaiara sartzeko',
-    loginTab: language === 'es' ? 'Iniciar sesion' : 'Hasi saioa',
+    loginTab: language === 'es' ? 'Iniciar sesión' : 'Hasi saioa',
     registerTab: language === 'es' ? 'Registrarse' : 'Erregistratu',
     magicLinkTab: language === 'es' ? 'Magic Link' : 'Magic Link',
     email: language === 'es' ? 'Email' : 'Emaila',
-    password: language === 'es' ? 'Contrasena' : 'Pasahitza',
-    loginButton: language === 'es' ? 'Iniciar sesion' : 'Hasi saioa',
+    password: language === 'es' ? 'Contraseña' : 'Pasahitza',
+    loginButton: language === 'es' ? 'Iniciar sesión' : 'Hasi saioa',
     registerButton: language === 'es' ? 'Registrarse' : 'Erregistratu',
-    sendMagicLink: language === 'es' ? 'Enviar enlace magico' : 'Bidali lotura magikoa',
-    orContinueWith: language === 'es' ? 'O continua con' : 'Edo jarraitu honekin',
+    sendMagicLink: language === 'es' ? 'Enviar enlace mágico' : 'Bidali lotura magikoa',
+    orContinueWith: language === 'es' ? 'O continúa con' : 'Edo jarraitu honekin',
     continueWithGoogle: language === 'es' ? 'Continuar con Google' : 'Jarraitu Google-rekin',
     errorGeneric: language === 'es'
-      ? 'Error al procesar la solicitud. Intentalo de nuevo.'
+      ? 'Error al procesar la solicitud. Inténtalo de nuevo.'
       : 'Errorea eskaera prozesatzean. Saiatu berriro.',
     errorInvalidCredentials: language === 'es'
-      ? 'Email o contrasena incorrectos.'
+      ? 'Email o contraseña incorrectos.'
       : 'Email edo pasahitz okerrak.',
     errorEmailInUse: language === 'es'
-      ? 'Este email ya esta registrado. Intenta iniciar sesion.'
+      ? 'Este email ya está registrado. Intenta iniciar sesión.'
       : 'Email hau jadanik erregistratuta dago. Saiatu saioa hasten.',
     errorWeakPassword: language === 'es'
-      ? 'La contrasena debe tener al menos 6 caracteres.'
+      ? 'La contraseña debe tener al menos 6 caracteres.'
       : 'Pasahitzak gutxienez 6 karaktere izan behar ditu.',
     successEmailSent: language === 'es'
       ? 'Hemos enviado un enlace a tu email. Revisa tu bandeja de entrada.'
@@ -61,7 +61,7 @@ export function LoginPage() {
       ? 'Registro exitoso. Revisa tu email para confirmar tu cuenta.'
       : 'Erregistroa arrakastatsua. Begiratu zure emaila kontua berresteko.',
     footer: language === 'es'
-      ? 'Al iniciar sesion, aceptas el uso de cookies para mejorar tu experiencia.'
+      ? 'Al iniciar sesión, aceptas el uso de cookies para mejorar tu experiencia.'
       : 'Saioa hastean, cookie-en erabilera onartzen duzu zure esperientzia hobetzeko.',
   };
 
