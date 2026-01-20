@@ -798,13 +798,22 @@ export function RouteGuidePage() {
               )}
             </MapContainer>
 
-            {/* Center on current point button */}
+            {/* Center on user location button */}
             <button
-              onClick={() => setCenterTarget([currentPoint.latitude, currentPoint.longitude])}
-              className="absolute bottom-24 right-2.5 z-[1000] w-[34px] h-[34px] bg-white rounded-md shadow-md border-2 border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-              title={language === 'es' ? 'Centrar en punto actual' : 'Uneko puntuan zentratu'}
+              onClick={() => {
+                if (userLocation) {
+                  setCenterTarget(userLocation);
+                } else {
+                  // Request location if not available
+                  startLocationWatch();
+                }
+              }}
+              className={`absolute bottom-24 right-2.5 z-[1000] w-[34px] h-[34px] bg-white rounded-md shadow-md border-2 border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors ${
+                userLocation ? 'text-blue-600' : 'text-gray-400'
+              }`}
+              title={language === 'es' ? 'Centrar en mi ubicación' : 'Nire kokapenean zentratu'}
             >
-              <LocateFixed size={18} className="text-gray-700" />
+              <LocateFixed size={18} />
             </button>
           </div>
 
