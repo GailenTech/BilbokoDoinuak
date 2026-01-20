@@ -17,6 +17,7 @@ import { AdminPage } from './pages/AdminPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { StatsPage } from './pages/StatsPage';
+import { RouteGuidePage } from './pages/RouteGuidePage';
 
 function App() {
   return (
@@ -87,6 +88,12 @@ function App() {
             <Route path="/stats" element={
               <ProtectedRoute>
                 <StatsPage />
+              </ProtectedRoute>
+            } />
+            {/* Route guide - walking navigation for routes */}
+            <Route path="/guide/:routeId" element={
+              <ProtectedRoute>
+                <RouteGuidePage />
               </ProtectedRoute>
             } />
           </Routes>
