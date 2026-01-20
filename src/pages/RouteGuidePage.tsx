@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, useMap, Tooltip } from 'react-leaflet';
 import { DivIcon } from 'leaflet';
@@ -475,8 +476,12 @@ export function RouteGuidePage() {
       // Swipe left = next point
       setSwipeOffset(-containerWidth);
       setTimeout(() => {
-        setCurrentIndex(prev => prev + 1);
-        setSwipeOffset(0);
+        // Use flushSync to ensure index and offset change atomically
+        // This prevents the "flick" where wrong card content briefly shows
+        flushSync(() => {
+          setCurrentIndex(prev => prev + 1);
+          setSwipeOffset(0);
+        });
         setIsAnimating(false);
         setIsHorizontalSwipe(false);
       }, 300);
@@ -484,8 +489,11 @@ export function RouteGuidePage() {
       // Swipe right = previous point
       setSwipeOffset(containerWidth);
       setTimeout(() => {
-        setCurrentIndex(prev => prev - 1);
-        setSwipeOffset(0);
+        // Use flushSync to ensure index and offset change atomically
+        flushSync(() => {
+          setCurrentIndex(prev => prev - 1);
+          setSwipeOffset(0);
+        });
         setIsAnimating(false);
         setIsHorizontalSwipe(false);
       }, 300);
