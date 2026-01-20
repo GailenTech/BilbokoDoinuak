@@ -388,7 +388,7 @@ export function RouteGuidePage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Swipe handlers for gallery-style navigation with animation
+  // Swipe handlers for animated card navigation (triggered from footer)
   const onTouchStart = (e: React.TouchEvent) => {
     if (isAnimating) return;
     touchStartX.current = e.targetTouches[0].clientX;
@@ -419,7 +419,7 @@ export function RouteGuidePage() {
     setIsAnimating(true);
 
     if (swipeOffset < -threshold && currentIndex < totalPoints - 1) {
-      // Swipe left = next point - animate to -100%
+      // Swipe left = next point
       setSwipeOffset(-containerWidth);
       setTimeout(() => {
         setCurrentIndex(currentIndex + 1);
@@ -427,7 +427,7 @@ export function RouteGuidePage() {
         setIsAnimating(false);
       }, 300);
     } else if (swipeOffset > threshold && currentIndex > 0) {
-      // Swipe right = previous point - animate to +100%
+      // Swipe right = previous point
       setSwipeOffset(containerWidth);
       setTimeout(() => {
         setCurrentIndex(currentIndex - 1);
@@ -550,15 +550,12 @@ export function RouteGuidePage() {
         />
       </div>
 
-      {/* Swipeable cards container */}
+      {/* Animated cards carousel */}
       <div
         ref={containerRef}
         className="flex-1 relative overflow-hidden"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
       >
-        {/* Cards track - absolute positioning for proper height */}
+        {/* Cards track - animates based on swipe */}
         <div
           className="absolute inset-0 flex"
           style={{
@@ -570,7 +567,7 @@ export function RouteGuidePage() {
           {/* Previous card */}
           <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-gray-50">
             {prevPoint && (
-              <div className="h-full flex flex-col">
+              <div className="flex flex-col">
                 {/* Media */}
                 <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
                   <img
@@ -601,7 +598,7 @@ export function RouteGuidePage() {
 
           {/* Current card */}
           <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-white">
-            <div className="h-full flex flex-col">
+            <div className="flex flex-col">
               {/* Media */}
               <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
                 {mediaIndex === 0 ? (
@@ -715,7 +712,7 @@ export function RouteGuidePage() {
           {/* Next card */}
           <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-gray-50">
             {nextPoint && (
-              <div className="h-full flex flex-col">
+              <div className="flex flex-col">
                 {/* Media */}
                 <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
                   <img
@@ -865,8 +862,13 @@ export function RouteGuidePage() {
         </div>
       )}
 
-      {/* Navigation footer */}
-      <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
+      {/* Navigation footer - swipeable */}
+      <div
+        className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
