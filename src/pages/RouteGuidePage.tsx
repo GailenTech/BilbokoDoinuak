@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   ArrowLeft,
   Map as MapIcon,
-  X
+  X,
+  LocateFixed
 } from 'lucide-react';
 import soundPointsData from '../data/soundPoints.json';
 import routesData from '../data/routes.json';
@@ -121,7 +122,7 @@ const userLocationIcon = new DivIcon({
   iconAnchor: [9, 9],
 });
 
-// Component to fit map to bounds
+// Component to fit map to bounds on initial load
 function MapBoundsController({ routeGeometry, currentPoint }: {
   routeGeometry: [number, number][];
   currentPoint: { latitude: number; longitude: number } | null;
@@ -147,6 +148,23 @@ function MapBoundsController({ routeGeometry, currentPoint }: {
       map.fitBounds(bounds, { padding: [30, 30] });
     }
   }, [map, routeGeometry, currentPoint]);
+
+  return null;
+}
+
+// Component to center map on current point when triggered
+function MapCenterOnPoint({ targetLocation, onComplete }: {
+  targetLocation: [number, number] | null;
+  onComplete: () => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (targetLocation) {
+      map.flyTo(targetLocation, 17, { duration: 0.8 });
+      onComplete();
+    }
+  }, [map, targetLocation, onComplete]);
 
   return null;
 }
@@ -245,14 +263,18 @@ export function RouteGuidePage() {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [centerTarget, setCenterTarget] = useState<[number, number] | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Minimum swipe distance (in px) to trigger navigation
-  const minSwipeDistance = 50;
+  // Swipe threshold (percentage of container width)
+  const swipeThreshold = 0.25;
 
   const route = routesData.find(r => r.id === routeId) as RouteData | undefined;
 
@@ -366,31 +388,71 @@ export function RouteGuidePage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Swipe handlers for gallery-style navigation
+  // Swipe handlers for gallery-style navigation with animation
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    if (isAnimating) return;
+    touchStartX.current = e.targetTouches[0].clientX;
+    setIsSwiping(true);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (!isSwiping || touchStartX.current === null || isAnimating) return;
+
+    const currentX = e.targetTouches[0].clientX;
+    const diff = currentX - touchStartX.current;
+
+    // Limit swipe at boundaries
+    if ((currentIndex === 0 && diff > 0) || (currentIndex === totalPoints - 1 && diff < 0)) {
+      setSwipeOffset(diff * 0.3); // Resistance at boundaries
+    } else {
+      setSwipeOffset(diff);
+    }
   };
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (!isSwiping || isAnimating) return;
 
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    const containerWidth = containerRef.current?.offsetWidth || 300;
+    const threshold = containerWidth * swipeThreshold;
 
-    if (isLeftSwipe && currentIndex < totalPoints - 1) {
-      // Swipe left = next point
-      setCurrentIndex(currentIndex + 1);
-    } else if (isRightSwipe && currentIndex > 0) {
-      // Swipe right = previous point
-      setCurrentIndex(currentIndex - 1);
+    setIsSwiping(false);
+    setIsAnimating(true);
+
+    if (swipeOffset < -threshold && currentIndex < totalPoints - 1) {
+      // Swipe left = next point - animate to -100%
+      setSwipeOffset(-containerWidth);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setSwipeOffset(0);
+        setIsAnimating(false);
+      }, 300);
+    } else if (swipeOffset > threshold && currentIndex > 0) {
+      // Swipe right = previous point - animate to +100%
+      setSwipeOffset(containerWidth);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex - 1);
+        setSwipeOffset(0);
+        setIsAnimating(false);
+      }, 300);
+    } else {
+      // Snap back
+      setSwipeOffset(0);
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 300);
     }
+
+    touchStartX.current = null;
   };
+
+  // Get point data for a given index (with bounds checking)
+  const getPointAt = (index: number) => {
+    if (index < 0 || index >= routePoints.length) return null;
+    return routePoints[index];
+  };
+
+  const prevPoint = getPointAt(currentIndex - 1);
+  const nextPoint = getPointAt(currentIndex + 1);
 
   // Get marker icon for a point based on its position
   const getMarkerIcon = (index: number) => {
@@ -490,34 +552,75 @@ export function RouteGuidePage() {
 
       {/* Media slider (image + video) - with swipe support */}
       <div
-        className="relative aspect-[4/3] bg-gray-900 shrink-0"
+        ref={containerRef}
+        className="relative aspect-[4/3] bg-gray-900 shrink-0 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Image slide */}
-        {mediaIndex === 0 && (
-          <img
-            src={currentPoint.image_url}
-            alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-            className="w-full h-full object-cover select-none"
-            draggable={false}
-          />
-        )}
+        {/* Carousel track with 3 slides */}
+        <div
+          className="flex h-full"
+          style={{
+            transform: `translateX(calc(-100% + ${swipeOffset}px))`,
+            transition: isAnimating && !isSwiping ? 'transform 0.3s ease-out' : 'none',
+            width: '300%',
+          }}
+        >
+          {/* Previous slide */}
+          <div className="w-1/3 h-full flex-shrink-0 bg-gray-900">
+            {prevPoint && (
+              <img
+                src={prevPoint.image_url}
+                alt={language === 'es' ? prevPoint.title_es : prevPoint.title_eu}
+                className="w-full h-full object-cover select-none opacity-50"
+                draggable={false}
+              />
+            )}
+          </div>
 
-        {/* Video slide */}
-        {mediaIndex === 1 && hasVideo && (
-          <iframe
-            width="100%"
-            height="100%"
-            src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
-            title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0"
-          />
-        )}
+          {/* Current slide */}
+          <div className="w-1/3 h-full flex-shrink-0 relative">
+            {mediaIndex === 0 ? (
+              <img
+                src={currentPoint.image_url}
+                alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                className="w-full h-full object-cover select-none"
+                draggable={false}
+              />
+            ) : hasVideo ? (
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
+                title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0"
+              />
+            ) : (
+              <img
+                src={currentPoint.image_url}
+                alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                className="w-full h-full object-cover select-none"
+                draggable={false}
+              />
+            )}
+          </div>
+
+          {/* Next slide */}
+          <div className="w-1/3 h-full flex-shrink-0 bg-gray-900">
+            {nextPoint && (
+              <img
+                src={nextPoint.image_url}
+                alt={language === 'es' ? nextPoint.title_es : nextPoint.title_eu}
+                className="w-full h-full object-cover select-none opacity-50"
+                draggable={false}
+              />
+            )}
+          </div>
+        </div>
 
         {/* Floating controls overlay */}
         <div className="absolute inset-0 pointer-events-none">
@@ -645,7 +748,7 @@ export function RouteGuidePage() {
           </div>
 
           {/* Fullscreen Map container */}
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <MapContainer
               center={[currentPoint.latitude, currentPoint.longitude]}
               zoom={16}
@@ -655,6 +758,10 @@ export function RouteGuidePage() {
               <MapBoundsController
                 routeGeometry={route.geometry}
                 currentPoint={currentPoint}
+              />
+              <MapCenterOnPoint
+                targetLocation={centerTarget}
+                onComplete={() => setCenterTarget(null)}
               />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -690,6 +797,15 @@ export function RouteGuidePage() {
                 <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={500} />
               )}
             </MapContainer>
+
+            {/* Center on current point button */}
+            <button
+              onClick={() => setCenterTarget([currentPoint.latitude, currentPoint.longitude])}
+              className="absolute bottom-24 right-2.5 z-[1000] w-[34px] h-[34px] bg-white rounded-md shadow-md border-2 border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+              title={language === 'es' ? 'Centrar en punto actual' : 'Uneko puntuan zentratu'}
+            >
+              <LocateFixed size={18} className="text-gray-700" />
+            </button>
           </div>
 
           {/* Map footer */}
