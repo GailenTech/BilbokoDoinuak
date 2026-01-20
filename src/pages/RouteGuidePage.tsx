@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { flushSync } from 'react-dom';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, useMap, Tooltip } from 'react-leaflet';
 import { DivIcon } from 'leaflet';
@@ -267,19 +266,9 @@ export function RouteGuidePage() {
   const [centerTarget, setCenterTarget] = useState<[number, number] | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const descriptionRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-
-  // Swipe threshold (percentage of container width)
-  const swipeThreshold = 0.25;
 
   const route = routesData.find(r => r.id === routeId) as RouteData | undefined;
 
@@ -293,7 +282,6 @@ export function RouteGuidePage() {
 
   const currentPoint = routePoints[currentIndex];
   const totalPoints = routePoints.length;
-  const hasVideo = currentPoint?.youtube_id;
 
   // Start location watching when map is shown
   const startLocationWatch = useCallback(() => {
@@ -342,19 +330,72 @@ export function RouteGuidePage() {
     }
   }, [currentIndex]);
 
+  // Scroll to a specific card index
+  const scrollToIndex = useCallback((index: number) => {
+    if (scrollContainerRef.current) {
+      isScrollingRef.current = true;
+      const cardWidth = scrollContainerRef.current.offsetWidth;
+      scrollContainerRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: 'smooth'
+      });
+      // Reset scrolling flag after animation
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 350);
+    }
+  }, []);
+
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      scrollToIndex(currentIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (currentIndex < totalPoints - 1) {
-      setCurrentIndex(currentIndex + 1);
+      scrollToIndex(currentIndex + 1);
     } else {
       setIsCompleted(true);
     }
   };
+
+  // Handle scroll events to sync current index
+  const handleScroll = useCallback(() => {
+    if (isScrollingRef.current || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const cardWidth = container.offsetWidth;
+    const scrollLeft = container.scrollLeft;
+    const newIndex = Math.round(scrollLeft / cardWidth);
+
+    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < totalPoints) {
+      setCurrentIndex(newIndex);
+    }
+  }, [currentIndex, totalPoints]);
+
+  // Attach scroll listener
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  // Scroll to current index when changed via dots or other means
+  useEffect(() => {
+    if (!isScrollingRef.current && scrollContainerRef.current) {
+      const cardWidth = scrollContainerRef.current.offsetWidth;
+      const expectedScroll = currentIndex * cardWidth;
+      const actualScroll = scrollContainerRef.current.scrollLeft;
+
+      // Only scroll if position differs significantly
+      if (Math.abs(expectedScroll - actualScroll) > 10) {
+        scrollToIndex(currentIndex);
+      }
+    }
+  }, [currentIndex, scrollToIndex]);
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -392,186 +433,6 @@ export function RouteGuidePage() {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
-  // Swipe state refs (to avoid stale closures in event listeners)
-  const swipeStateRef = useRef({
-    isSwiping: false,
-    isHorizontalSwipe: false,
-    isAnimating: false,
-    currentIndex: 0,
-    totalPoints: 0,
-  });
-
-  // Keep refs in sync with state
-  useEffect(() => {
-    swipeStateRef.current = {
-      isSwiping,
-      isHorizontalSwipe,
-      isAnimating,
-      currentIndex,
-      totalPoints,
-    };
-  }, [isSwiping, isHorizontalSwipe, isAnimating, currentIndex, totalPoints]);
-
-  // Swipe handlers using native events (for passive: false support)
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (swipeStateRef.current.isAnimating) return;
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    setIsSwiping(true);
-    setIsHorizontalSwipe(false);
-  }, []);
-
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    const state = swipeStateRef.current;
-    if (!state.isSwiping || touchStartX.current === null || touchStartY.current === null || state.isAnimating) return;
-
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const diffX = currentX - touchStartX.current;
-    const diffY = currentY - touchStartY.current;
-
-    // Determine if this is a horizontal swipe (only on first significant movement)
-    if (!state.isHorizontalSwipe && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        setIsHorizontalSwipe(true);
-        // Prevent scroll immediately when we determine it's horizontal
-        e.preventDefault();
-      } else {
-        // Vertical scroll - cancel swipe tracking
-        setIsSwiping(false);
-        return;
-      }
-    }
-
-    // Block vertical scroll during horizontal swipe
-    if (state.isHorizontalSwipe || (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10)) {
-      e.preventDefault();
-
-      // Limit swipe at boundaries
-      if ((state.currentIndex === 0 && diffX > 0) || (state.currentIndex === state.totalPoints - 1 && diffX < 0)) {
-        setSwipeOffset(diffX * 0.3); // Resistance at boundaries
-      } else {
-        setSwipeOffset(diffX);
-      }
-    }
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    const state = swipeStateRef.current;
-    if (!state.isSwiping || state.isAnimating) {
-      touchStartX.current = null;
-      touchStartY.current = null;
-      setIsHorizontalSwipe(false);
-      return;
-    }
-
-    const containerWidth = containerRef.current?.offsetWidth || 300;
-    const threshold = containerWidth * swipeThreshold;
-
-    setIsSwiping(false);
-    setIsAnimating(true);
-
-    if (swipeOffset < -threshold && state.currentIndex < state.totalPoints - 1) {
-      // Swipe left = next point
-      setSwipeOffset(-containerWidth);
-      setTimeout(() => {
-        // Hide carousel briefly to prevent any flash during card swap
-        if (containerRef.current) {
-          containerRef.current.style.visibility = 'hidden';
-        }
-
-        flushSync(() => {
-          setCurrentIndex(prev => prev + 1);
-          setSwipeOffset(0);
-        });
-
-        // Show carousel after DOM has fully updated
-        requestAnimationFrame(() => {
-          if (containerRef.current) {
-            containerRef.current.style.visibility = 'visible';
-          }
-          setIsAnimating(false);
-          setIsHorizontalSwipe(false);
-        });
-      }, 300);
-    } else if (swipeOffset > threshold && state.currentIndex > 0) {
-      // Swipe right = previous point
-      setSwipeOffset(containerWidth);
-      setTimeout(() => {
-        // Hide carousel briefly to prevent any flash during card swap
-        if (containerRef.current) {
-          containerRef.current.style.visibility = 'hidden';
-        }
-
-        flushSync(() => {
-          setCurrentIndex(prev => prev - 1);
-          setSwipeOffset(0);
-        });
-
-        // Show carousel after DOM has fully updated
-        requestAnimationFrame(() => {
-          if (containerRef.current) {
-            containerRef.current.style.visibility = 'visible';
-          }
-          setIsAnimating(false);
-          setIsHorizontalSwipe(false);
-        });
-      }, 300);
-    } else {
-      // Snap back
-      setSwipeOffset(0);
-      setTimeout(() => {
-        setIsAnimating(false);
-        setIsHorizontalSwipe(false);
-      }, 300);
-    }
-
-    touchStartX.current = null;
-    touchStartY.current = null;
-  }, [swipeOffset, swipeThreshold]);
-
-  // Attach touch event listeners with passive: false to allow preventDefault
-  useEffect(() => {
-    const descEl = descriptionRef.current;
-    const footerEl = footerRef.current;
-
-    const options = { passive: false } as AddEventListenerOptions;
-
-    if (descEl) {
-      descEl.addEventListener('touchstart', handleTouchStart, options);
-      descEl.addEventListener('touchmove', handleTouchMove, options);
-      descEl.addEventListener('touchend', handleTouchEnd);
-    }
-
-    if (footerEl) {
-      footerEl.addEventListener('touchstart', handleTouchStart, options);
-      footerEl.addEventListener('touchmove', handleTouchMove, options);
-      footerEl.addEventListener('touchend', handleTouchEnd);
-    }
-
-    return () => {
-      if (descEl) {
-        descEl.removeEventListener('touchstart', handleTouchStart);
-        descEl.removeEventListener('touchmove', handleTouchMove);
-        descEl.removeEventListener('touchend', handleTouchEnd);
-      }
-      if (footerEl) {
-        footerEl.removeEventListener('touchstart', handleTouchStart);
-        footerEl.removeEventListener('touchmove', handleTouchMove);
-        footerEl.removeEventListener('touchend', handleTouchEnd);
-      }
-    };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
-
-  // Get point data for a given index (with bounds checking)
-  const getPointAt = (index: number) => {
-    if (index < 0 || index >= routePoints.length) return null;
-    return routePoints[index];
-  };
-
-  const prevPoint = getPointAt(currentIndex - 1);
-  const nextPoint = getPointAt(currentIndex + 1);
 
   // Get marker icon for a point based on its position
   const getMarkerIcon = (index: number) => {
@@ -669,199 +530,157 @@ export function RouteGuidePage() {
         />
       </div>
 
-      {/* Animated cards carousel */}
+      {/* Scroll-snap carousel - all cards rendered, native scrolling */}
       <div
-        ref={containerRef}
-        className="flex-1 relative overflow-hidden"
+        ref={scrollContainerRef}
+        className="flex-1 overflow-x-auto overflow-y-hidden"
+        style={{
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollBehavior: 'smooth',
+        }}
       >
-        {/* Cards track - animates based on swipe */}
-        <div
-          className="absolute inset-0 flex"
-          style={{
-            transform: `translateX(calc(-33.333% + ${swipeOffset}px))`,
-            transition: isAnimating && !isSwiping ? 'transform 0.3s ease-out' : 'none',
-            width: '300%',
-          }}
-        >
-          {/* Previous card */}
-          <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-gray-50">
-            {prevPoint && (
-              <div className="flex flex-col">
-                {/* Media */}
-                <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
-                  <img
-                    src={prevPoint.image_url}
-                    alt={language === 'es' ? prevPoint.title_es : prevPoint.title_eu}
-                    className="w-full h-full object-cover select-none"
-                    draggable={false}
-                  />
-                  <div
-                    className="absolute bottom-3 left-3 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-                    style={{ backgroundColor: route.color }}
-                  >
-                    {currentIndex}
-                  </div>
-                </div>
-                {/* Info */}
-                <div className="flex-1 p-4">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    {language === 'es' ? prevPoint.title_es : prevPoint.title_eu}
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed text-sm">
-                    {language === 'es' ? prevPoint.description_es : prevPoint.description_eu}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="flex h-full" style={{ width: `${totalPoints * 100}%` }}>
+          {routePoints.map((point, index) => {
+            const isActive = index === currentIndex;
+            const pointHasVideo = point.youtube_id;
 
-          {/* Current card */}
-          <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-white">
-            <div className="flex flex-col">
-              {/* Media */}
-              <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
-                {mediaIndex === 0 ? (
-                  <img
-                    src={currentPoint.image_url}
-                    alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                    className="w-full h-full object-cover select-none"
-                    draggable={false}
-                  />
-                ) : hasVideo ? (
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
-                    title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0"
-                  />
-                ) : (
-                  <img
-                    src={currentPoint.image_url}
-                    alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                    className="w-full h-full object-cover select-none"
-                    draggable={false}
-                  />
-                )}
-                {/* Floating controls */}
-                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-                    style={{ backgroundColor: route.color }}
-                  >
-                    {currentIndex + 1}
-                  </div>
-                  {hasVideo && (
-                    <div className="flex gap-1 bg-black/60 rounded-full p-1">
-                      <button
-                        onClick={() => setMediaIndex(0)}
-                        className={`p-1.5 rounded-full transition-colors ${
-                          mediaIndex === 0 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
-                        }`}
-                      >
-                        <Image className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setMediaIndex(1)}
-                        className={`p-1.5 rounded-full transition-colors ${
-                          mediaIndex === 1 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
-                        }`}
-                      >
-                        <Video className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Audio Player */}
-              {currentPoint.audio_url && (
-                <div className="bg-gray-100 px-4 py-3 flex items-center gap-3 shrink-0">
-                  <button
-                    onClick={toggleAudio}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors shrink-0"
-                    style={{ backgroundColor: route.color }}
-                  >
-                    {isAudioPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                  </button>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <input
-                      type="range"
-                      min="0"
-                      max={audioDuration || 100}
-                      value={audioProgress}
-                      onChange={handleAudioSeek}
-                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-                      style={{ accentColor: route.color }}
-                    />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{formatTime(audioProgress)}</span>
-                      <span>{formatTime(audioDuration)}</span>
-                    </div>
-                  </div>
-                  <Volume2 className="w-5 h-5 text-gray-400 shrink-0" />
-                </div>
-              )}
-
-              {/* Point info - swipeable area */}
+            return (
               <div
-                ref={descriptionRef}
-                className="flex-1 p-4 overflow-y-auto"
+                key={point.id}
+                className="h-full overflow-y-auto bg-white"
+                style={{
+                  width: `${100 / totalPoints}%`,
+                  scrollSnapAlign: 'start',
+                  scrollSnapStop: 'always',
+                }}
               >
-                <div className="flex items-start gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 flex-1">
-                    {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                  </h2>
-                  <button
-                    onClick={() => setShowMap(true)}
-                    className="p-2 rounded-lg transition-colors shrink-0"
-                    style={{ backgroundColor: `${route.color}15`, color: route.color }}
-                    title={t('guide.viewOnMap')}
-                  >
-                    <MapIcon className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="text-gray-600 leading-relaxed">
-                  {language === 'es' ? currentPoint.description_es : currentPoint.description_eu}
-                </p>
-              </div>
-            </div>
-          </div>
+                <div className="flex flex-col min-h-full">
+                  {/* Media */}
+                  <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
+                    {isActive && mediaIndex === 1 && pointHasVideo ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube.com/embed/${point.youtube_id}?rel=0&modestbranding=1`}
+                        title={language === 'es' ? point.title_es : point.title_eu}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0"
+                      />
+                    ) : (
+                      <img
+                        src={point.image_url}
+                        alt={language === 'es' ? point.title_es : point.title_eu}
+                        className="w-full h-full object-cover select-none"
+                        draggable={false}
+                      />
+                    )}
+                    {/* Floating controls */}
+                    <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                        style={{ backgroundColor: route.color }}
+                      >
+                        {index + 1}
+                      </div>
+                      {isActive && pointHasVideo && (
+                        <div className="flex gap-1 bg-black/60 rounded-full p-1">
+                          <button
+                            onClick={() => setMediaIndex(0)}
+                            className={`p-1.5 rounded-full transition-colors ${
+                              mediaIndex === 0 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
+                            }`}
+                          >
+                            <Image className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setMediaIndex(1)}
+                            className={`p-1.5 rounded-full transition-colors ${
+                              mediaIndex === 1 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
+                            }`}
+                          >
+                            <Video className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-          {/* Next card */}
-          <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-gray-50">
-            {nextPoint && (
-              <div className="flex flex-col">
-                {/* Media */}
-                <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
-                  <img
-                    src={nextPoint.image_url}
-                    alt={language === 'es' ? nextPoint.title_es : nextPoint.title_eu}
-                    className="w-full h-full object-cover select-none"
-                    draggable={false}
-                  />
-                  <div
-                    className="absolute bottom-3 left-3 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-                    style={{ backgroundColor: route.color }}
-                  >
-                    {currentIndex + 2}
+                  {/* Audio Player - Always reserve space to prevent layout shift */}
+                  <div className={`bg-gray-100 px-4 py-3 flex items-center gap-3 shrink-0 ${!point.audio_url ? 'invisible' : ''}`} style={{ minHeight: '72px' }}>
+                    {point.audio_url && isActive ? (
+                      <>
+                        <button
+                          onClick={toggleAudio}
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors shrink-0"
+                          style={{ backgroundColor: route.color }}
+                        >
+                          {isAudioPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                        </button>
+                        <div className="flex-1 flex flex-col gap-1">
+                          <input
+                            type="range"
+                            min="0"
+                            max={audioDuration || 100}
+                            value={audioProgress}
+                            onChange={handleAudioSeek}
+                            className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                            style={{ accentColor: route.color }}
+                          />
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>{formatTime(audioProgress)}</span>
+                            <span>{formatTime(audioDuration)}</span>
+                          </div>
+                        </div>
+                        <Volume2 className="w-5 h-5 text-gray-400 shrink-0" />
+                      </>
+                    ) : point.audio_url ? (
+                      <>
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 opacity-50"
+                          style={{ backgroundColor: route.color }}
+                        >
+                          <Play className="w-5 h-5 ml-0.5" />
+                        </div>
+                        <div className="flex-1 flex flex-col gap-1">
+                          <div className="w-full h-2 bg-gray-300 rounded-lg" />
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>0:00</span>
+                            <span>--:--</span>
+                          </div>
+                        </div>
+                        <Volume2 className="w-5 h-5 text-gray-400 shrink-0" />
+                      </>
+                    ) : null}
+                  </div>
+
+                  {/* Point info */}
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    <div className="flex items-start gap-2 mb-2">
+                      <h2 className="text-xl font-bold text-gray-900 flex-1">
+                        {language === 'es' ? point.title_es : point.title_eu}
+                      </h2>
+                      {isActive && (
+                        <button
+                          onClick={() => setShowMap(true)}
+                          className="p-2 rounded-lg transition-colors shrink-0"
+                          style={{ backgroundColor: `${route.color}15`, color: route.color }}
+                          title={t('guide.viewOnMap')}
+                        >
+                          <MapIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {language === 'es' ? point.description_es : point.description_eu}
+                    </p>
                   </div>
                 </div>
-                {/* Info */}
-                <div className="flex-1 p-4">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    {language === 'es' ? nextPoint.title_es : nextPoint.title_eu}
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed text-sm">
-                    {language === 'es' ? nextPoint.description_es : nextPoint.description_eu}
-                  </p>
-                </div>
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
 
@@ -984,11 +803,8 @@ export function RouteGuidePage() {
         </div>
       )}
 
-      {/* Navigation footer - swipeable */}
-      <div
-        ref={footerRef}
-        className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0"
-      >
+      {/* Navigation footer */}
+      <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
         <button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
@@ -1002,7 +818,7 @@ export function RouteGuidePage() {
           {routePoints.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
+              onClick={() => scrollToIndex(index)}
               className={`w-2.5 h-2.5 rounded-full transition-all flex-shrink-0 ${
                 index === currentIndex ? 'w-6' : 'hover:opacity-80'
               }`}
