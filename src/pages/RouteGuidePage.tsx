@@ -553,16 +553,16 @@ export function RouteGuidePage() {
       {/* Swipeable cards container */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-hidden"
+        className="flex-1 relative overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Cards track */}
+        {/* Cards track - absolute positioning for proper height */}
         <div
-          className="flex h-full"
+          className="absolute inset-0 flex"
           style={{
-            transform: `translateX(calc(-100% + ${swipeOffset}px))`,
+            transform: `translateX(calc(-33.333% + ${swipeOffset}px))`,
             transition: isAnimating && !isSwiping ? 'transform 0.3s ease-out' : 'none',
             width: '300%',
           }}
