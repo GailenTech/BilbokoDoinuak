@@ -476,26 +476,47 @@ export function RouteGuidePage() {
       // Swipe left = next point
       setSwipeOffset(-containerWidth);
       setTimeout(() => {
-        // Use flushSync to ensure index and offset change atomically
-        // This prevents the "flick" where wrong card content briefly shows
+        // Hide carousel briefly to prevent any flash during card swap
+        if (containerRef.current) {
+          containerRef.current.style.visibility = 'hidden';
+        }
+
         flushSync(() => {
           setCurrentIndex(prev => prev + 1);
           setSwipeOffset(0);
         });
-        setIsAnimating(false);
-        setIsHorizontalSwipe(false);
+
+        // Show carousel after DOM has fully updated
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            containerRef.current.style.visibility = 'visible';
+          }
+          setIsAnimating(false);
+          setIsHorizontalSwipe(false);
+        });
       }, 300);
     } else if (swipeOffset > threshold && state.currentIndex > 0) {
       // Swipe right = previous point
       setSwipeOffset(containerWidth);
       setTimeout(() => {
-        // Use flushSync to ensure index and offset change atomically
+        // Hide carousel briefly to prevent any flash during card swap
+        if (containerRef.current) {
+          containerRef.current.style.visibility = 'hidden';
+        }
+
         flushSync(() => {
           setCurrentIndex(prev => prev - 1);
           setSwipeOffset(0);
         });
-        setIsAnimating(false);
-        setIsHorizontalSwipe(false);
+
+        // Show carousel after DOM has fully updated
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            containerRef.current.style.visibility = 'visible';
+          }
+          setIsAnimating(false);
+          setIsHorizontalSwipe(false);
+        });
       }, 300);
     } else {
       // Snap back
