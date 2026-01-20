@@ -273,6 +273,8 @@ export function RouteGuidePage() {
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Swipe threshold (percentage of container width)
@@ -390,27 +392,50 @@ export function RouteGuidePage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Swipe handlers for animated card navigation
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (isAnimating) return;
-    touchStartX.current = e.targetTouches[0].clientX;
-    touchStartY.current = e.targetTouches[0].clientY;
+  // Swipe state refs (to avoid stale closures in event listeners)
+  const swipeStateRef = useRef({
+    isSwiping: false,
+    isHorizontalSwipe: false,
+    isAnimating: false,
+    currentIndex: 0,
+    totalPoints: 0,
+  });
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    swipeStateRef.current = {
+      isSwiping,
+      isHorizontalSwipe,
+      isAnimating,
+      currentIndex,
+      totalPoints,
+    };
+  }, [isSwiping, isHorizontalSwipe, isAnimating, currentIndex, totalPoints]);
+
+  // Swipe handlers using native events (for passive: false support)
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (swipeStateRef.current.isAnimating) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
     setIsSwiping(true);
     setIsHorizontalSwipe(false);
-  };
+  }, []);
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping || touchStartX.current === null || touchStartY.current === null || isAnimating) return;
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    const state = swipeStateRef.current;
+    if (!state.isSwiping || touchStartX.current === null || touchStartY.current === null || state.isAnimating) return;
 
-    const currentX = e.targetTouches[0].clientX;
-    const currentY = e.targetTouches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
     const diffX = currentX - touchStartX.current;
     const diffY = currentY - touchStartY.current;
 
     // Determine if this is a horizontal swipe (only on first significant movement)
-    if (!isHorizontalSwipe && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
+    if (!state.isHorizontalSwipe && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
       if (Math.abs(diffX) > Math.abs(diffY)) {
         setIsHorizontalSwipe(true);
+        // Prevent scroll immediately when we determine it's horizontal
+        e.preventDefault();
       } else {
         // Vertical scroll - cancel swipe tracking
         setIsSwiping(false);
@@ -419,20 +444,21 @@ export function RouteGuidePage() {
     }
 
     // Block vertical scroll during horizontal swipe
-    if (isHorizontalSwipe) {
+    if (state.isHorizontalSwipe || (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10)) {
       e.preventDefault();
 
       // Limit swipe at boundaries
-      if ((currentIndex === 0 && diffX > 0) || (currentIndex === totalPoints - 1 && diffX < 0)) {
+      if ((state.currentIndex === 0 && diffX > 0) || (state.currentIndex === state.totalPoints - 1 && diffX < 0)) {
         setSwipeOffset(diffX * 0.3); // Resistance at boundaries
       } else {
         setSwipeOffset(diffX);
       }
     }
-  };
+  }, []);
 
-  const onTouchEnd = () => {
-    if (!isSwiping || isAnimating) {
+  const handleTouchEnd = useCallback(() => {
+    const state = swipeStateRef.current;
+    if (!state.isSwiping || state.isAnimating) {
       touchStartX.current = null;
       touchStartY.current = null;
       setIsHorizontalSwipe(false);
@@ -445,20 +471,20 @@ export function RouteGuidePage() {
     setIsSwiping(false);
     setIsAnimating(true);
 
-    if (swipeOffset < -threshold && currentIndex < totalPoints - 1) {
+    if (swipeOffset < -threshold && state.currentIndex < state.totalPoints - 1) {
       // Swipe left = next point
       setSwipeOffset(-containerWidth);
       setTimeout(() => {
-        setCurrentIndex(currentIndex + 1);
+        setCurrentIndex(prev => prev + 1);
         setSwipeOffset(0);
         setIsAnimating(false);
         setIsHorizontalSwipe(false);
       }, 300);
-    } else if (swipeOffset > threshold && currentIndex > 0) {
+    } else if (swipeOffset > threshold && state.currentIndex > 0) {
       // Swipe right = previous point
       setSwipeOffset(containerWidth);
       setTimeout(() => {
-        setCurrentIndex(currentIndex - 1);
+        setCurrentIndex(prev => prev - 1);
         setSwipeOffset(0);
         setIsAnimating(false);
         setIsHorizontalSwipe(false);
@@ -474,7 +500,40 @@ export function RouteGuidePage() {
 
     touchStartX.current = null;
     touchStartY.current = null;
-  };
+  }, [swipeOffset, swipeThreshold]);
+
+  // Attach touch event listeners with passive: false to allow preventDefault
+  useEffect(() => {
+    const descEl = descriptionRef.current;
+    const footerEl = footerRef.current;
+
+    const options = { passive: false } as AddEventListenerOptions;
+
+    if (descEl) {
+      descEl.addEventListener('touchstart', handleTouchStart, options);
+      descEl.addEventListener('touchmove', handleTouchMove, options);
+      descEl.addEventListener('touchend', handleTouchEnd);
+    }
+
+    if (footerEl) {
+      footerEl.addEventListener('touchstart', handleTouchStart, options);
+      footerEl.addEventListener('touchmove', handleTouchMove, options);
+      footerEl.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      if (descEl) {
+        descEl.removeEventListener('touchstart', handleTouchStart);
+        descEl.removeEventListener('touchmove', handleTouchMove);
+        descEl.removeEventListener('touchend', handleTouchEnd);
+      }
+      if (footerEl) {
+        footerEl.removeEventListener('touchstart', handleTouchStart);
+        footerEl.removeEventListener('touchmove', handleTouchMove);
+        footerEl.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Get point data for a given index (with bounds checking)
   const getPointAt = (index: number) => {
@@ -720,10 +779,8 @@ export function RouteGuidePage() {
 
               {/* Point info - swipeable area */}
               <div
+                ref={descriptionRef}
                 className="flex-1 p-4 overflow-y-auto"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
               >
                 <div className="flex items-start gap-2 mb-2">
                   <h2 className="text-xl font-bold text-gray-900 flex-1">
@@ -900,10 +957,8 @@ export function RouteGuidePage() {
 
       {/* Navigation footer - swipeable */}
       <div
+        ref={footerRef}
         className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
       >
         <button
           onClick={handlePrevious}
