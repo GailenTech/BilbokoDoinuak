@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Tooltip } from 'react-leaflet';
 import { Icon, DivIcon, Marker as LeafletMarker } from 'leaflet';
 import { useLanguage } from '../context/LanguageContext';
 import { Volume2, LocateFixed } from 'lucide-react';
@@ -326,6 +326,11 @@ export function MapPage() {
               click: () => handlePointClick(point),
             }}
           >
+            <Tooltip direction="top" offset={[0, -35]} opacity={0.9}>
+              <span className="font-medium text-sm">
+                {language === 'es' ? point.title_es : point.title_eu}
+              </span>
+            </Tooltip>
             <Popup
               minWidth={320}
               maxWidth={360}
