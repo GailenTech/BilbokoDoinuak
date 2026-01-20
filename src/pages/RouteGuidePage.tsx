@@ -269,7 +269,9 @@ export function RouteGuidePage() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -388,29 +390,54 @@ export function RouteGuidePage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Swipe handlers for animated card navigation (triggered from footer)
+  // Swipe handlers for animated card navigation
   const onTouchStart = (e: React.TouchEvent) => {
     if (isAnimating) return;
     touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
     setIsSwiping(true);
+    setIsHorizontalSwipe(false);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping || touchStartX.current === null || isAnimating) return;
+    if (!isSwiping || touchStartX.current === null || touchStartY.current === null || isAnimating) return;
 
     const currentX = e.targetTouches[0].clientX;
-    const diff = currentX - touchStartX.current;
+    const currentY = e.targetTouches[0].clientY;
+    const diffX = currentX - touchStartX.current;
+    const diffY = currentY - touchStartY.current;
 
-    // Limit swipe at boundaries
-    if ((currentIndex === 0 && diff > 0) || (currentIndex === totalPoints - 1 && diff < 0)) {
-      setSwipeOffset(diff * 0.3); // Resistance at boundaries
-    } else {
-      setSwipeOffset(diff);
+    // Determine if this is a horizontal swipe (only on first significant movement)
+    if (!isHorizontalSwipe && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        setIsHorizontalSwipe(true);
+      } else {
+        // Vertical scroll - cancel swipe tracking
+        setIsSwiping(false);
+        return;
+      }
+    }
+
+    // Block vertical scroll during horizontal swipe
+    if (isHorizontalSwipe) {
+      e.preventDefault();
+
+      // Limit swipe at boundaries
+      if ((currentIndex === 0 && diffX > 0) || (currentIndex === totalPoints - 1 && diffX < 0)) {
+        setSwipeOffset(diffX * 0.3); // Resistance at boundaries
+      } else {
+        setSwipeOffset(diffX);
+      }
     }
   };
 
   const onTouchEnd = () => {
-    if (!isSwiping || isAnimating) return;
+    if (!isSwiping || isAnimating) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      setIsHorizontalSwipe(false);
+      return;
+    }
 
     const containerWidth = containerRef.current?.offsetWidth || 300;
     const threshold = containerWidth * swipeThreshold;
@@ -425,6 +452,7 @@ export function RouteGuidePage() {
         setCurrentIndex(currentIndex + 1);
         setSwipeOffset(0);
         setIsAnimating(false);
+        setIsHorizontalSwipe(false);
       }, 300);
     } else if (swipeOffset > threshold && currentIndex > 0) {
       // Swipe right = previous point
@@ -433,16 +461,19 @@ export function RouteGuidePage() {
         setCurrentIndex(currentIndex - 1);
         setSwipeOffset(0);
         setIsAnimating(false);
+        setIsHorizontalSwipe(false);
       }, 300);
     } else {
       // Snap back
       setSwipeOffset(0);
       setTimeout(() => {
         setIsAnimating(false);
+        setIsHorizontalSwipe(false);
       }, 300);
     }
 
     touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   // Get point data for a given index (with bounds checking)
@@ -472,7 +503,7 @@ export function RouteGuidePage() {
       <main className="min-h-[calc(100vh-64px)] bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Ruta no encontrada</p>
-          <Link to="/routes" className="text-blue-600 hover:underline">
+          <Link to="/visitas" className="text-blue-600 hover:underline">
             {t('guide.backToRoutes')}
           </Link>
         </div>
@@ -505,7 +536,7 @@ export function RouteGuidePage() {
               Revisar puntos
             </button>
             <Link
-              to="/routes"
+              to="/visitas"
               className="px-6 py-3 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
             >
               {t('guide.backToRoutes')}
@@ -524,7 +555,7 @@ export function RouteGuidePage() {
         style={{ backgroundColor: route.color }}
       >
         <button
-          onClick={() => navigate('/routes')}
+          onClick={() => navigate('/visitas')}
           className="p-1 hover:bg-white/20 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-6 h-6" />
@@ -687,8 +718,13 @@ export function RouteGuidePage() {
                 </div>
               )}
 
-              {/* Point info */}
-              <div className="flex-1 p-4 overflow-y-auto">
+              {/* Point info - swipeable area */}
+              <div
+                className="flex-1 p-4 overflow-y-auto"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
                 <div className="flex items-start gap-2 mb-2">
                   <h2 className="text-xl font-bold text-gray-900 flex-1">
                     {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
