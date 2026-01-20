@@ -550,15 +550,15 @@ export function RouteGuidePage() {
         />
       </div>
 
-      {/* Media slider (image + video) - with swipe support */}
+      {/* Swipeable cards container */}
       <div
         ref={containerRef}
-        className="relative aspect-[4/3] bg-gray-900 shrink-0 overflow-hidden"
+        className="flex-1 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Carousel track with 3 slides */}
+        {/* Cards track */}
         <div
           className="flex h-full"
           style={{
@@ -567,149 +567,183 @@ export function RouteGuidePage() {
             width: '300%',
           }}
         >
-          {/* Previous slide */}
-          <div className="w-1/3 h-full flex-shrink-0 bg-gray-900">
+          {/* Previous card */}
+          <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-gray-50">
             {prevPoint && (
-              <img
-                src={prevPoint.image_url}
-                alt={language === 'es' ? prevPoint.title_es : prevPoint.title_eu}
-                className="w-full h-full object-cover select-none opacity-50"
-                draggable={false}
-              />
+              <div className="h-full flex flex-col">
+                {/* Media */}
+                <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
+                  <img
+                    src={prevPoint.image_url}
+                    alt={language === 'es' ? prevPoint.title_es : prevPoint.title_eu}
+                    className="w-full h-full object-cover select-none"
+                    draggable={false}
+                  />
+                  <div
+                    className="absolute bottom-3 left-3 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                    style={{ backgroundColor: route.color }}
+                  >
+                    {currentIndex}
+                  </div>
+                </div>
+                {/* Info */}
+                <div className="flex-1 p-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    {language === 'es' ? prevPoint.title_es : prevPoint.title_eu}
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed text-sm">
+                    {language === 'es' ? prevPoint.description_es : prevPoint.description_eu}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Current slide */}
-          <div className="w-1/3 h-full flex-shrink-0 relative">
-            {mediaIndex === 0 ? (
-              <img
-                src={currentPoint.image_url}
-                alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                className="w-full h-full object-cover select-none"
-                draggable={false}
-              />
-            ) : hasVideo ? (
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
-                title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0"
-              />
-            ) : (
-              <img
-                src={currentPoint.image_url}
-                alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                className="w-full h-full object-cover select-none"
-                draggable={false}
-              />
-            )}
-          </div>
+          {/* Current card */}
+          <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-white">
+            <div className="h-full flex flex-col">
+              {/* Media */}
+              <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
+                {mediaIndex === 0 ? (
+                  <img
+                    src={currentPoint.image_url}
+                    alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                    className="w-full h-full object-cover select-none"
+                    draggable={false}
+                  />
+                ) : hasVideo ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
+                    title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0"
+                  />
+                ) : (
+                  <img
+                    src={currentPoint.image_url}
+                    alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                    className="w-full h-full object-cover select-none"
+                    draggable={false}
+                  />
+                )}
+                {/* Floating controls */}
+                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                    style={{ backgroundColor: route.color }}
+                  >
+                    {currentIndex + 1}
+                  </div>
+                  {hasVideo && (
+                    <div className="flex gap-1 bg-black/60 rounded-full p-1">
+                      <button
+                        onClick={() => setMediaIndex(0)}
+                        className={`p-1.5 rounded-full transition-colors ${
+                          mediaIndex === 0 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
+                        }`}
+                      >
+                        <Image className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setMediaIndex(1)}
+                        className={`p-1.5 rounded-full transition-colors ${
+                          mediaIndex === 1 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
+                        }`}
+                      >
+                        <Video className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          {/* Next slide */}
-          <div className="w-1/3 h-full flex-shrink-0 bg-gray-900">
-            {nextPoint && (
-              <img
-                src={nextPoint.image_url}
-                alt={language === 'es' ? nextPoint.title_es : nextPoint.title_eu}
-                className="w-full h-full object-cover select-none opacity-50"
-                draggable={false}
-              />
-            )}
-          </div>
-        </div>
+              {/* Audio Player */}
+              {currentPoint.audio_url && (
+                <div className="bg-gray-100 px-4 py-3 flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={toggleAudio}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors shrink-0"
+                    style={{ backgroundColor: route.color }}
+                  >
+                    {isAudioPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                  </button>
+                  <div className="flex-1 flex flex-col gap-1">
+                    <input
+                      type="range"
+                      min="0"
+                      max={audioDuration || 100}
+                      value={audioProgress}
+                      onChange={handleAudioSeek}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                      style={{ accentColor: route.color }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>{formatTime(audioProgress)}</span>
+                      <span>{formatTime(audioDuration)}</span>
+                    </div>
+                  </div>
+                  <Volume2 className="w-5 h-5 text-gray-400 shrink-0" />
+                </div>
+              )}
 
-        {/* Floating controls overlay */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Bottom row: Point number + Media toggle */}
-          <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end pointer-events-auto">
-            {/* Point number badge */}
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-              style={{ backgroundColor: route.color }}
-            >
-              {currentIndex + 1}
+              {/* Point info */}
+              <div className="flex-1 p-4 overflow-y-auto">
+                <div className="flex items-start gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-gray-900 flex-1">
+                    {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+                  </h2>
+                  <button
+                    onClick={() => setShowMap(true)}
+                    className="p-2 rounded-lg transition-colors shrink-0"
+                    style={{ backgroundColor: `${route.color}15`, color: route.color }}
+                    title={t('guide.viewOnMap')}
+                  >
+                    <MapIcon className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-gray-600 leading-relaxed">
+                  {language === 'es' ? currentPoint.description_es : currentPoint.description_eu}
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* Media toggle (image/video) */}
-            {hasVideo && (
-              <div className="flex gap-1 bg-black/60 rounded-full p-1">
-                <button
-                  onClick={() => setMediaIndex(0)}
-                  className={`p-1.5 rounded-full transition-colors ${
-                    mediaIndex === 0 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
-                  }`}
-                  title="Imagen"
-                >
-                  <Image className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setMediaIndex(1)}
-                  className={`p-1.5 rounded-full transition-colors ${
-                    mediaIndex === 1 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
-                  }`}
-                  title="Video"
-                >
-                  <Video className="w-4 h-4" />
-                </button>
+          {/* Next card */}
+          <div className="w-1/3 h-full flex-shrink-0 overflow-y-auto bg-gray-50">
+            {nextPoint && (
+              <div className="h-full flex flex-col">
+                {/* Media */}
+                <div className="aspect-[4/3] bg-gray-900 shrink-0 relative">
+                  <img
+                    src={nextPoint.image_url}
+                    alt={language === 'es' ? nextPoint.title_es : nextPoint.title_eu}
+                    className="w-full h-full object-cover select-none"
+                    draggable={false}
+                  />
+                  <div
+                    className="absolute bottom-3 left-3 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                    style={{ backgroundColor: route.color }}
+                  >
+                    {currentIndex + 2}
+                  </div>
+                </div>
+                {/* Info */}
+                <div className="flex-1 p-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    {language === 'es' ? nextPoint.title_es : nextPoint.title_eu}
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed text-sm">
+                    {language === 'es' ? nextPoint.description_es : nextPoint.description_eu}
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Audio Player - below media */}
-      {currentPoint.audio_url && (
-        <div className="bg-gray-100 px-4 py-3 flex items-center gap-3 shrink-0">
-          <button
-            onClick={toggleAudio}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors shrink-0"
-            style={{ backgroundColor: route.color }}
-          >
-            {isAudioPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-          </button>
-          <div className="flex-1 flex flex-col gap-1">
-            <input
-              type="range"
-              min="0"
-              max={audioDuration || 100}
-              value={audioProgress}
-              onChange={handleAudioSeek}
-              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-              style={{
-                accentColor: route.color
-              }}
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>{formatTime(audioProgress)}</span>
-              <span>{formatTime(audioDuration)}</span>
-            </div>
-          </div>
-          <Volume2 className="w-5 h-5 text-gray-400 shrink-0" />
-        </div>
-      )}
-
-      {/* Point info */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="flex items-start gap-2 mb-2">
-          <h2 className="text-xl font-bold text-gray-900 flex-1">
-            {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-          </h2>
-          <button
-            onClick={() => setShowMap(true)}
-            className="p-2 rounded-lg transition-colors shrink-0"
-            style={{ backgroundColor: `${route.color}15`, color: route.color }}
-            title={t('guide.viewOnMap')}
-          >
-            <MapIcon className="w-5 h-5" />
-          </button>
-        </div>
-        <p className="text-gray-600 leading-relaxed">
-          {language === 'es' ? currentPoint.description_es : currentPoint.description_eu}
-        </p>
       </div>
 
       {/* Hidden audio element */}
