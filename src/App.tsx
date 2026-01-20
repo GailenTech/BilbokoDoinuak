@@ -18,6 +18,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { StatsPage } from './pages/StatsPage';
 import { RouteGuidePage } from './pages/RouteGuidePage';
+import { VisitasPage } from './pages/VisitasPage';
 
 function App() {
   return (
@@ -90,12 +91,9 @@ function App() {
                 <StatsPage />
               </ProtectedRoute>
             } />
-            {/* Route guide - walking navigation for routes */}
-            <Route path="/guide/:routeId" element={
-              <ProtectedRoute>
-                <RouteGuidePage />
-              </ProtectedRoute>
-            } />
+            {/* Public visits routes - no authentication required, no menu link */}
+            <Route path="/visitas" element={<VisitasPage />} />
+            <Route path="/visitas/:routeId" element={<RouteGuidePage />} />
           </Routes>
         </div>
       </BrowserRouter>

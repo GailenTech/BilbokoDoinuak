@@ -1,20 +1,155 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Polyline, useMap, Tooltip } from 'react-leaflet';
+import { DivIcon } from 'leaflet';
 import { useLanguage } from '../context/LanguageContext';
 import {
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  Navigation,
   Volume2,
+  Pause,
   Play,
-  LocateFixed,
+  Image,
+  Video,
   CheckCircle2,
   ArrowLeft,
-  Map
+  Map as MapIcon,
+  X
 } from 'lucide-react';
 import soundPointsData from '../data/soundPoints.json';
 import routesData from '../data/routes.json';
+import 'leaflet/dist/leaflet.css';
+
+// Custom marker icon for current point (large, highlighted)
+const createCurrentPointIcon = (color: string) => new DivIcon({
+  className: 'current-point-marker',
+  html: `<div style="
+    width: 32px;
+    height: 32px;
+    background-color: ${color};
+    border: 4px solid white;
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  "><div style="
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+  "></div></div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
+// Start point icon (flag style)
+const createStartIcon = () => new DivIcon({
+  className: 'start-point-marker',
+  html: `<div style="
+    width: 28px;
+    height: 28px;
+    background-color: #22c55e;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+    font-weight: bold;
+  ">1</div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
+
+// End point icon
+const createEndIcon = (totalPoints: number) => new DivIcon({
+  className: 'end-point-marker',
+  html: `<div style="
+    width: 28px;
+    height: 28px;
+    background-color: #ef4444;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+    font-weight: bold;
+  ">${totalPoints}</div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
+
+// Intermediate point icon (smaller)
+const createIntermediateIcon = (index: number, visited: boolean) => new DivIcon({
+  className: 'intermediate-point-marker',
+  html: `<div style="
+    width: 20px;
+    height: 20px;
+    background-color: ${visited ? '#6b7280' : '#9ca3af'};
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    font-weight: bold;
+  ">${index + 1}</div>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
+
+// Custom icon for user location
+const userLocationIcon = new DivIcon({
+  className: 'user-location-marker',
+  html: `<div style="
+    width: 18px;
+    height: 18px;
+    background-color: #3b82f6;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  "></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+// Component to fit map to bounds
+function MapBoundsController({ routeGeometry, currentPoint }: {
+  routeGeometry: [number, number][];
+  currentPoint: { latitude: number; longitude: number } | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (routeGeometry.length > 0) {
+      // Calculate bounds that include route and current point
+      const allPoints = [...routeGeometry];
+      if (currentPoint) {
+        allPoints.push([currentPoint.latitude, currentPoint.longitude]);
+      }
+
+      const lats = allPoints.map(p => p[0]);
+      const lngs = allPoints.map(p => p[1]);
+
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lats), Math.min(...lngs)],
+        [Math.max(...lats), Math.max(...lngs)]
+      ];
+
+      map.fitBounds(bounds, { padding: [30, 30] });
+    }
+  }, [map, routeGeometry, currentPoint]);
+
+  return null;
+}
 
 interface SoundPoint {
   id: string;
@@ -41,11 +176,8 @@ interface RouteData {
   approachSegments: { from: [number, number]; to: [number, number] }[];
 }
 
-/**
- * Calculate distance between two coordinates using Haversine formula
- */
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3; // Earth's radius in meters
+  const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
@@ -58,24 +190,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-/**
- * Calculate bearing between two coordinates
- */
-function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  const θ = Math.atan2(y, x);
-
-  return ((θ * 180) / Math.PI + 360) % 360;
-}
-
-/**
- * Find the index of the closest point on the route geometry to a given coordinate
- */
 function findClosestGeometryIndex(coord: [number, number], geometry: [number, number][]): number {
   let minDist = Infinity;
   let minIndex = 0;
@@ -91,13 +205,8 @@ function findClosestGeometryIndex(coord: [number, number], geometry: [number, nu
   return minIndex;
 }
 
-/**
- * Order points along the route based on their approachSegment connections
- */
 function orderPointsAlongRoute(points: SoundPoint[], route: RouteData): SoundPoint[] {
-  // Map each point to its position along the route geometry
   const pointsWithOrder = points.map(point => {
-    // Find the approachSegment for this point
     const segment = route.approachSegments.find(seg => {
       const dist = calculateDistance(
         point.latitude,
@@ -105,16 +214,14 @@ function orderPointsAlongRoute(points: SoundPoint[], route: RouteData): SoundPoi
         seg.from[0],
         seg.from[1]
       );
-      return dist < 50; // Within 50 meters
+      return dist < 50;
     });
 
     if (segment) {
-      // Use the "to" coordinate (where it connects to route) for ordering
       const geometryIndex = findClosestGeometryIndex(segment.to, route.geometry);
       return { point, order: geometryIndex };
     }
 
-    // Fallback: use the point's own coordinates
     const geometryIndex = findClosestGeometryIndex(
       [point.latitude, point.longitude],
       route.geometry
@@ -122,9 +229,7 @@ function orderPointsAlongRoute(points: SoundPoint[], route: RouteData): SoundPoi
     return { point, order: geometryIndex };
   });
 
-  // Sort by order along the geometry
   pointsWithOrder.sort((a, b) => a.order - b.order);
-
   return pointsWithOrder.map(p => p.point);
 }
 
@@ -134,18 +239,23 @@ export function RouteGuidePage() {
   const { language, t } = useLanguage();
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [mediaIndex, setMediaIndex] = useState(0); // 0 = image, 1 = video
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Find the route data
+  // Minimum swipe distance (in px) to trigger navigation
+  const minSwipeDistance = 50;
+
   const route = routesData.find(r => r.id === routeId) as RouteData | undefined;
 
-  // Get and order points for this route
   const allPoints = soundPointsData as SoundPoint[];
   const routePoints = route
     ? orderPointsAlongRoute(
@@ -156,39 +266,18 @@ export function RouteGuidePage() {
 
   const currentPoint = routePoints[currentIndex];
   const totalPoints = routePoints.length;
+  const hasVideo = currentPoint?.youtube_id;
 
-  // Calculate distance and bearing to current point
-  const distanceToPoint = userLocation && currentPoint
-    ? calculateDistance(
-        userLocation[0],
-        userLocation[1],
-        currentPoint.latitude,
-        currentPoint.longitude
-      )
-    : null;
-
-  const bearingToPoint = userLocation && currentPoint
-    ? calculateBearing(
-        userLocation[0],
-        userLocation[1],
-        currentPoint.latitude,
-        currentPoint.longitude
-      )
-    : null;
-
-  // Start watching location
+  // Start location watching when map is shown
   const startLocationWatch = useCallback(() => {
-    if (!navigator.geolocation) return;
-
-    setIsLocating(true);
+    if (!navigator.geolocation || watchId !== null) return;
 
     const id = navigator.geolocation.watchPosition(
       (position) => {
         setUserLocation([position.coords.latitude, position.coords.longitude]);
-        setIsLocating(false);
       },
       () => {
-        setIsLocating(false);
+        // Silently fail if location not available
       },
       {
         enableHighAccuracy: true,
@@ -198,9 +287,15 @@ export function RouteGuidePage() {
     );
 
     setWatchId(id);
-  }, []);
+  }, [watchId]);
 
-  // Cleanup on unmount
+  // Start location watch when map is shown
+  useEffect(() => {
+    if (showMap) {
+      startLocationWatch();
+    }
+  }, [showMap, startLocationWatch]);
+
   useEffect(() => {
     return () => {
       if (watchId !== null) {
@@ -209,10 +304,11 @@ export function RouteGuidePage() {
     };
   }, [watchId]);
 
-  // Reset audio when changing points
   useEffect(() => {
     setIsAudioPlaying(false);
-    setShowVideo(false);
+    setMediaIndex(0);
+    setAudioProgress(0);
+    setAudioDuration(0);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -244,12 +340,69 @@ export function RouteGuidePage() {
     }
   };
 
-  // Format distance
-  const formatDistance = (meters: number): string => {
-    if (meters < 1000) {
-      return `${Math.round(meters)} ${t('guide.meters')}`;
+  const handleAudioTimeUpdate = () => {
+    if (audioRef.current) {
+      setAudioProgress(audioRef.current.currentTime);
     }
-    return `${(meters / 1000).toFixed(1)} km`;
+  };
+
+  const handleAudioLoadedMetadata = () => {
+    if (audioRef.current) {
+      setAudioDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleAudioSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setAudioProgress(time);
+    }
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Swipe handlers for gallery-style navigation
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentIndex < totalPoints - 1) {
+      // Swipe left = next point
+      setCurrentIndex(currentIndex + 1);
+    } else if (isRightSwipe && currentIndex > 0) {
+      // Swipe right = previous point
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  // Get marker icon for a point based on its position
+  const getMarkerIcon = (index: number) => {
+    if (index === currentIndex) {
+      return createCurrentPointIcon(route!.color);
+    } else if (index === 0) {
+      return createStartIcon();
+    } else if (index === totalPoints - 1) {
+      return createEndIcon(totalPoints);
+    } else {
+      return createIntermediateIcon(index, index < currentIndex);
+    }
   };
 
   if (!route || routePoints.length === 0) {
@@ -265,7 +418,6 @@ export function RouteGuidePage() {
     );
   }
 
-  // Completion screen
   if (isCompleted) {
     return (
       <main className="min-h-[calc(100vh-64px)] bg-gray-50 flex items-center justify-center p-4">
@@ -303,10 +455,10 @@ export function RouteGuidePage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col">
+    <main className="min-h-[calc(100vh-64px)] bg-white flex flex-col">
       {/* Header */}
       <div
-        className="text-white px-4 py-3 flex items-center gap-3"
+        className="text-white px-4 py-3 flex items-center gap-3 shrink-0"
         style={{ backgroundColor: route.color }}
       >
         <button
@@ -323,17 +475,10 @@ export function RouteGuidePage() {
             {t('guide.point')} {currentIndex + 1} {t('guide.of')} {totalPoints}
           </p>
         </div>
-        <Link
-          to={`/map?route=${route.id}`}
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          title={t('guide.viewOnMap')}
-        >
-          <Map className="w-5 h-5" />
-        </Link>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-gray-300">
+      <div className="h-1 bg-gray-200 shrink-0">
         <div
           className="h-full transition-all duration-300"
           style={{
@@ -343,141 +488,232 @@ export function RouteGuidePage() {
         />
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Point image */}
-        <div className="relative aspect-video bg-gray-200">
+      {/* Media slider (image + video) - with swipe support */}
+      <div
+        className="relative aspect-[4/3] bg-gray-900 shrink-0"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Image slide */}
+        {mediaIndex === 0 && (
           <img
             src={currentPoint.image_url}
             alt={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover select-none"
+            draggable={false}
           />
+        )}
 
-          {/* Distance overlay */}
-          {distanceToPoint !== null && (
-            <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-2 rounded-lg flex items-center gap-2">
-              <Navigation
-                className="w-5 h-5 transition-transform"
-                style={{ transform: `rotate(${bearingToPoint || 0}deg)` }}
-              />
-              <span className="font-medium">
-                {distanceToPoint < 30
-                  ? t('guide.arrived')
-                  : formatDistance(distanceToPoint)
-                }
-              </span>
-            </div>
-          )}
+        {/* Video slide */}
+        {mediaIndex === 1 && hasVideo && (
+          <iframe
+            width="100%"
+            height="100%"
+            src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
+            title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0"
+          />
+        )}
 
-          {/* Point number badge */}
-          <div
-            className="absolute bottom-4 left-4 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-            style={{ backgroundColor: route.color }}
-          >
-            {currentIndex + 1}
-          </div>
-        </div>
-
-        {/* Point info */}
-        <div className="p-4 bg-white">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-          </h2>
-          <p className="text-gray-600 mb-4 leading-relaxed">
-            {language === 'es' ? currentPoint.description_es : currentPoint.description_eu}
-          </p>
-
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-2">
-            {/* Location button */}
-            {!userLocation && (
-              <button
-                onClick={startLocationWatch}
-                disabled={isLocating}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                <LocateFixed className={`w-5 h-5 ${isLocating ? 'animate-pulse' : ''}`} />
-                <span>{t('guide.enableLocation')}</span>
-              </button>
-            )}
-
-            {/* Audio button */}
-            {currentPoint.audio_url && (
-              <button
-                onClick={toggleAudio}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  isAudioPlaying
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <Volume2 className="w-5 h-5" />
-                <span>{t('guide.playAudio')}</span>
-              </button>
-            )}
-
-            {/* Video button */}
-            {currentPoint.youtube_id && (
-              <button
-                onClick={() => setShowVideo(!showVideo)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  showVideo
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <Play className="w-5 h-5" />
-                <span>{t('guide.watchVideo')}</span>
-              </button>
-            )}
-
-            {/* Open in Maps */}
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${currentPoint.latitude},${currentPoint.longitude}&travelmode=walking`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+        {/* Floating controls overlay */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Bottom row: Point number + Media toggle */}
+          <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end pointer-events-auto">
+            {/* Point number badge */}
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+              style={{ backgroundColor: route.color }}
             >
-              <MapPin className="w-5 h-5" />
-              <span>Google Maps</span>
-            </a>
-          </div>
-
-          {/* YouTube video embed */}
-          {showVideo && currentPoint.youtube_id && (
-            <div className="mt-4 aspect-video rounded-lg overflow-hidden">
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${currentPoint.youtube_id}?rel=0&modestbranding=1`}
-                title={language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              {currentIndex + 1}
             </div>
-          )}
 
-          {/* Hidden audio element */}
-          {currentPoint.audio_url && (
-            <audio
-              ref={audioRef}
-              src={currentPoint.audio_url}
-              onEnded={() => setIsAudioPlaying(false)}
-            />
-          )}
+            {/* Media toggle (image/video) */}
+            {hasVideo && (
+              <div className="flex gap-1 bg-black/60 rounded-full p-1">
+                <button
+                  onClick={() => setMediaIndex(0)}
+                  className={`p-1.5 rounded-full transition-colors ${
+                    mediaIndex === 0 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
+                  }`}
+                  title="Imagen"
+                >
+                  <Image className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setMediaIndex(1)}
+                  className={`p-1.5 rounded-full transition-colors ${
+                    mediaIndex === 1 ? 'bg-white text-gray-900' : 'text-white hover:bg-white/20'
+                  }`}
+                  title="Video"
+                >
+                  <Video className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Audio Player - below media */}
+      {currentPoint.audio_url && (
+        <div className="bg-gray-100 px-4 py-3 flex items-center gap-3 shrink-0">
+          <button
+            onClick={toggleAudio}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors shrink-0"
+            style={{ backgroundColor: route.color }}
+          >
+            {isAudioPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+          </button>
+          <div className="flex-1 flex flex-col gap-1">
+            <input
+              type="range"
+              min="0"
+              max={audioDuration || 100}
+              value={audioProgress}
+              onChange={handleAudioSeek}
+              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+              style={{
+                accentColor: route.color
+              }}
+            />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>{formatTime(audioProgress)}</span>
+              <span>{formatTime(audioDuration)}</span>
+            </div>
+          </div>
+          <Volume2 className="w-5 h-5 text-gray-400 shrink-0" />
+        </div>
+      )}
+
+      {/* Point info */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="flex items-start gap-2 mb-2">
+          <h2 className="text-xl font-bold text-gray-900 flex-1">
+            {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+          </h2>
+          <button
+            onClick={() => setShowMap(true)}
+            className="p-2 rounded-lg transition-colors shrink-0"
+            style={{ backgroundColor: `${route.color}15`, color: route.color }}
+            title={t('guide.viewOnMap')}
+          >
+            <MapIcon className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-gray-600 leading-relaxed">
+          {language === 'es' ? currentPoint.description_es : currentPoint.description_eu}
+        </p>
+      </div>
+
+      {/* Hidden audio element */}
+      {currentPoint.audio_url && (
+        <audio
+          ref={audioRef}
+          src={currentPoint.audio_url}
+          onEnded={() => setIsAudioPlaying(false)}
+          onTimeUpdate={handleAudioTimeUpdate}
+          onLoadedMetadata={handleAudioLoadedMetadata}
+        />
+      )}
+
+      {/* Fullscreen Map Modal */}
+      {showMap && route.geometry && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          {/* Map header */}
+          <div
+            className="px-4 py-3 flex items-center justify-between text-white shrink-0"
+            style={{ backgroundColor: route.color }}
+          >
+            <div className="flex-1 min-w-0">
+              <span className="font-medium block truncate">
+                {language === 'es' ? currentPoint.title_es : currentPoint.title_eu}
+              </span>
+              <span className="text-sm opacity-80">
+                {t('guide.point')} {currentIndex + 1} {t('guide.of')} {totalPoints}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowMap(false)}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors ml-2"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Fullscreen Map container */}
+          <div className="flex-1">
+            <MapContainer
+              center={[currentPoint.latitude, currentPoint.longitude]}
+              zoom={16}
+              className="h-full w-full"
+              zoomControl={true}
+            >
+              <MapBoundsController
+                routeGeometry={route.geometry}
+                currentPoint={currentPoint}
+              />
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {/* Route line */}
+              <Polyline
+                positions={route.geometry}
+                pathOptions={{
+                  color: route.color,
+                  weight: 4,
+                  opacity: 0.8,
+                  dashArray: '10, 10',
+                }}
+              />
+              {/* All route point markers with tooltips */}
+              {routePoints.map((point, index) => (
+                <Marker
+                  key={point.id}
+                  position={[point.latitude, point.longitude]}
+                  icon={getMarkerIcon(index)}
+                  zIndexOffset={index === currentIndex ? 1000 : 0}
+                >
+                  <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
+                    <span className="font-medium text-sm">
+                      {index + 1}. {language === 'es' ? point.title_es : point.title_eu}
+                    </span>
+                  </Tooltip>
+                </Marker>
+              ))}
+              {/* User location marker */}
+              {userLocation && (
+                <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={500} />
+              )}
+            </MapContainer>
+          </div>
+
+          {/* Map footer */}
+          <div className="px-4 py-3 bg-white border-t border-gray-200 shrink-0">
+            <button
+              onClick={() => setShowMap(false)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-white font-medium transition-colors"
+              style={{ backgroundColor: route.color }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>{language === 'es' ? 'Volver a la guía' : 'Gidara itzuli'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation footer */}
-      <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3">
+      <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
         <button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className="flex items-center gap-1 px-4 py-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="p-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-5 h-5" />
-          <span className="hidden sm:inline">{t('guide.prev')}</span>
         </button>
 
         {/* Progress dots */}
@@ -487,9 +723,7 @@ export function RouteGuidePage() {
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`w-2.5 h-2.5 rounded-full transition-all flex-shrink-0 ${
-                index === currentIndex
-                  ? 'w-6'
-                  : 'hover:opacity-80'
+                index === currentIndex ? 'w-6' : 'hover:opacity-80'
               }`}
               style={{
                 backgroundColor: index <= currentIndex ? route.color : '#d1d5db'
@@ -500,12 +734,9 @@ export function RouteGuidePage() {
 
         <button
           onClick={handleNext}
-          className="flex items-center gap-1 px-4 py-3 rounded-lg text-white transition-colors"
+          className="p-3 rounded-lg text-white transition-colors"
           style={{ backgroundColor: route.color }}
         >
-          <span className="hidden sm:inline">
-            {currentIndex === totalPoints - 1 ? t('guide.finish') : t('guide.next')}
-          </span>
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>

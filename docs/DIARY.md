@@ -326,3 +326,71 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 - [ ] Probar flujo completo con proyecto Supabase real
 - [ ] Implementar sincronización bidireccional (merge de datos)
 - [ ] Añadir soporte para otros providers (Apple, GitHub)
+
+---
+
+## 2026-01-20 - Guía de Navegación de Rutas
+
+### Qué se ha hecho
+
+#### RouteGuidePage (`src/pages/RouteGuidePage.tsx`)
+Nueva página que permite "caminar" por una ruta con navegación guiada estilo carrusel:
+
+- **Ordenación de puntos**: Los puntos se ordenan automáticamente siguiendo la geometría de la ruta usando los `approachSegments` del JSON de rutas
+- **Interfaz de navegación**:
+  - Header con nombre de ruta y progreso (ej: "Punto 3 de 6")
+  - Barra de progreso visual
+  - Imagen del punto actual
+  - Indicador de distancia/dirección (cuando geolocalización activa)
+  - Título y descripción del punto
+  - Botones de acción: ubicación, audio, vídeo, Google Maps
+  - Navegación: Anterior/Siguiente + dots de progreso clicables
+- **Funcionalidades**:
+  - Cálculo de distancia usando fórmula Haversine
+  - Cálculo de bearing (dirección) al siguiente punto
+  - Geolocalización con watchPosition para actualización continua
+  - Reproducción de audio integrada
+  - Embed de YouTube para vídeos
+  - Enlace directo a Google Maps para navegación externa
+  - Pantalla de finalización con felicitación
+
+#### Actualizaciones en RoutesPage
+- Nuevo diseño de tarjetas con dos botones:
+  - "Iniciar Guía" → `/guide/{routeId}` (color de la ruta)
+  - "Ver en Mapa" → `/map?route={routeId}` (gris)
+
+#### Traducciones añadidas
+- 18 nuevas claves en `LanguageContext.tsx` para la interfaz de guía
+- Soporte completo bilingüe (ES/EU)
+
+#### Nueva ruta en App.tsx
+- `/guide/:routeId` → `RouteGuidePage` (protegida con autenticación)
+
+### Algoritmo de ordenación de puntos
+
+```typescript
+// Los puntos se ordenan según su posición en la geometría de la ruta:
+// 1. Buscar el approachSegment más cercano al punto (< 50m)
+// 2. Usar la coordenada "to" del segment (donde conecta con la ruta)
+// 3. Encontrar el índice más cercano en la geometría
+// 4. Ordenar todos los puntos por ese índice
+```
+
+### Verificación
+- [x] Build de producción exitoso
+- [x] Navegación entre puntos funciona
+- [x] Progreso visual se actualiza correctamente
+- [x] Vídeos de YouTube se muestran correctamente
+- [x] Pantalla de finalización aparece al terminar
+- [x] Botones funcionan: audio, vídeo, Google Maps
+
+### Branch
+`feature/route-navigation-guide`
+
+### Commit
+`bc8a07b` - feat: Add route navigation guide for walking tours
+
+### Próximos pasos
+- [ ] Merge a main cuando se apruebe
+- [ ] Añadir vibración al llegar a un punto (si geolocalización activa)
+- [ ] Posible integración con brújula del dispositivo para flecha de dirección

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { Map, Ear, Trees, Music } from 'lucide-react';
+import { Map, Navigation, Ear, Trees, Music } from 'lucide-react';
 import routesData from '../data/routes.json';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -21,7 +21,7 @@ const titleColorMap: Record<string, string> = {
   'sound_identity': 'text-red-600',
 };
 
-export function RoutesPage() {
+export function VisitasPage() {
   const { language, t } = useLanguage();
 
   return (
@@ -30,14 +30,16 @@ export function RoutesPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('routes.title')}
+            {language === 'es' ? 'Visitas Guiadas' : 'Bisita Gidatuak'}
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            {t('routes.subtitle')}
+            {language === 'es'
+              ? 'Explora San Inazio con nuestras guías interactivas paso a paso.'
+              : 'Esploratu San Inazio gure gida interaktiboekin pausoz pauso.'}
           </p>
         </div>
 
-        {/* Routes list - horizontal cards like original */}
+        {/* Routes list */}
         <div className="flex flex-col gap-4 max-w-4xl mx-auto">
           {routesData.map((route) => {
             const IconComponent = iconMap[route.icon] || Ear;
@@ -64,12 +66,19 @@ export function RoutesPage() {
                   <p className="text-gray-600 text-sm mb-4">
                     {language === 'es' ? route.description_es : route.description_eu}
                   </p>
-                  {/* Action button */}
+                  {/* Action buttons */}
                   <div className="flex flex-wrap gap-2">
                     <Link
-                      to={`/map?route=${route.id}`}
+                      to={`/visitas/${route.id}`}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium text-sm transition-colors hover:opacity-90"
                       style={{ backgroundColor: route.color }}
+                    >
+                      <Navigation size={16} />
+                      <span>{t('routes.startGuide')}</span>
+                    </Link>
+                    <Link
+                      to={`/map?route=${route.id}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-medium text-sm hover:bg-gray-200 transition-colors"
                     >
                       <Map size={16} />
                       <span>{t('routes.viewOnMap')}</span>
